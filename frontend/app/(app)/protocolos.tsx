@@ -1,11 +1,11 @@
 import { useState } from "react";
 import {
   ActivityIndicator,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { useProtocolos } from "../../hooks/useProtocolos";
@@ -13,6 +13,8 @@ import { useProtocolos } from "../../hooks/useProtocolos";
 export default function Protocolos() {
   const { protocolos, isLoading, error } = useProtocolos();
   const [selected, setSelected] = useState(0);
+  const [search, setSearch] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
 
   if (isLoading) {
     return (
@@ -33,10 +35,22 @@ export default function Protocolos() {
   if (protocolos.length === 0) {
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.emptyText}>Nenhum protocolo encontrado</Text>
+        <Text style={styles.emptyEmoji}>📊</Text>
+        <Text style={styles.emptyTitle}>Nenhum protocolo encontrado</Text>
+        <Text style={styles.emptySubtitle}>
+          Protocolos criados pelo seu médico aparecerão aqui.
+        </Text>
       </View>
     );
   }
+
+  const filtrados = search
+    ? protocolos.filter(
+        (p) =>
+          p.titulo.toLowerCase().includes(search.toLowerCase()) ||
+          p.medico.nome.toLowerCase().includes(search.toLowerCase()),
+      )
+    : protocolos;
 
   const protocoloSelecionado = protocolos[selected];
 
@@ -48,7 +62,7 @@ export default function Protocolos() {
       try {
         exercicios = JSON.parse(exercicios);
       } catch {
-        return <Text style={styles.text}>{exercicios}</Text>;
+        return <Text style={styles.plainText}>{exercicios}</Text>;
       }
     }
 
@@ -56,14 +70,24 @@ export default function Protocolos() {
 
     return (
       <>
-        <Text style={styles.section}>Exercícios</Text>
+        <Text style={styles.section}>💪 Exercícios</Text>
         {exercicios.map((ex, idx) => (
           <View key={idx} style={styles.contentItem}>
-            <Text style={styles.contentTitle}>• {ex.nome}</Text>
-            {ex.series && <Text style={styles.contentText}>  Séries: {ex.series}</Text>}
-            {ex.duracao && <Text style={styles.contentText}>  Duração: {ex.duracao}</Text>}
-            {ex.frequencia && <Text style={styles.contentText}>  Frequência: {ex.frequencia}</Text>}
-            {ex.carga && <Text style={styles.contentText}>  Carga: {ex.carga}</Text>}
+            <Text style={styles.contentTitle}>{ex.nome}</Text>
+            {ex.series && (
+              <Text style={styles.contentText}>Séries: {ex.series}</Text>
+            )}
+            {ex.duracao && (
+              <Text style={styles.contentText}>Duração: {ex.duracao}</Text>
+            )}
+            {ex.frequencia && (
+              <Text style={styles.contentText}>
+                Frequência: {ex.frequencia}
+              </Text>
+            )}
+            {ex.carga && (
+              <Text style={styles.contentText}>Carga: {ex.carga}</Text>
+            )}
           </View>
         ))}
       </>
@@ -78,7 +102,7 @@ export default function Protocolos() {
       try {
         dieta = JSON.parse(dieta);
       } catch {
-        return <Text style={styles.text}>{dieta}</Text>;
+        return <Text style={styles.plainText}>{dieta}</Text>;
       }
     }
 
@@ -86,14 +110,14 @@ export default function Protocolos() {
 
     return (
       <>
-        <Text style={styles.section}>Dieta</Text>
+        <Text style={styles.section}>🥗 Dieta</Text>
         {dieta.map((item, idx) => (
           <View key={idx} style={styles.contentItem}>
             <Text style={styles.contentTitle}>
-              • {item.refeicao || "Refeição"}
+              {item.refeicao || "Refeição"}
             </Text>
             {item.descricao && (
-              <Text style={styles.contentText}>  {item.descricao}</Text>
+              <Text style={styles.contentText}>{item.descricao}</Text>
             )}
           </View>
         ))}
@@ -103,62 +127,104 @@ export default function Protocolos() {
 
   return (
     <View style={styles.container}>
-      {/* LADO ESQUERDO */}
+      {/* LISTA LATERAL */}
       <View style={styles.left}>
         <Text style={styles.title}>Meus protocolos</Text>
 
-        <TextInput placeholder="Pesquisar Protocolo" style={styles.search} />
+        <TextInput
+          placeholder="Pesquisar..."
+          value={search}
+          onChangeText={setSearch}
+          style={[styles.search, searchFocused && styles.searchFocused]}
+          onFocus={() => setSearchFocused(true)}
+          onBlur={() => setSearchFocused(false)}
+          placeholderTextColor="#94a3b8"
+        />
 
-        <ScrollView>
-          {protocolos.map((item, index) => (
-            <TouchableOpacity
-              key={item.id}
-              style={[styles.card, selected === index && styles.selectedCard]}
-              onPress={() => setSelected(index)}
-            >
-              <Text style={styles.cardTitle}>{item.titulo}</Text>
-
-              <Text style={styles.cardText}>
-                Criado em: {new Date(item.criadoEm).toLocaleDateString("pt-BR")}
-              </Text>
-              <Text style={styles.cardText}>Doutor: {item.medico.nome}</Text>
-              <Text style={styles.cardText}>Versão: {item.versao}</Text>
-            </TouchableOpacity>
-          ))}
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {filtrados.map((item, index) => {
+            const realIndex = protocolos.indexOf(item);
+            const isSelected = selected === realIndex;
+            return (
+              <Pressable
+                key={item.id}
+                style={({ pressed }) => [
+                  styles.card,
+                  isSelected && styles.selectedCard,
+                  !isSelected && pressed && { opacity: 0.8 },
+                ]}
+                onPress={() => setSelected(realIndex)}
+              >
+                <Text
+                  style={[
+                    styles.cardTitle,
+                    isSelected && styles.selectedCardTitle,
+                  ]}
+                >
+                  {item.titulo}
+                </Text>
+                <Text style={styles.cardMeta}>
+                  {new Date(item.criadoEm).toLocaleDateString("pt-BR")}
+                </Text>
+                <Text style={styles.cardMeta}>Dr(a). {item.medico.nome}</Text>
+                <Text style={styles.cardMeta}>v{item.versao}</Text>
+              </Pressable>
+            );
+          })}
         </ScrollView>
       </View>
 
       {/* DIVISOR */}
       <View style={styles.divider} />
 
-      {/* LADO DIREITO */}
+      {/* DETALHE */}
       <View style={styles.right}>
-        <ScrollView>
+        <ScrollView showsVerticalScrollIndicator={false}>
           <View style={styles.detailCard}>
-            <Text style={styles.detailTitle}>{protocoloSelecionado.titulo}</Text>
+            <Text style={styles.detailTitle}>
+              {protocoloSelecionado.titulo}
+            </Text>
 
-            <Text style={styles.doctorText}>Doutor: {protocoloSelecionado.medico.nome}</Text>
-
-            {protocoloSelecionado.tipo && (
-              <Text style={styles.typeText}>Tipo: {protocoloSelecionado.tipo}</Text>
-            )}
+            <View style={styles.metaRow}>
+              <View style={styles.metaBadge}>
+                <Text style={styles.metaBadgeText}>
+                  👨‍⚕️ {protocoloSelecionado.medico.nome}
+                </Text>
+              </View>
+              {protocoloSelecionado.tipo && (
+                <View
+                  style={[styles.metaBadge, { backgroundColor: "#f0fdf0" }]}
+                >
+                  <Text style={[styles.metaBadgeText, { color: "#15803d" }]}>
+                    {protocoloSelecionado.tipo}
+                  </Text>
+                </View>
+              )}
+            </View>
 
             {renderExercicios()}
-
             {renderDieta()}
 
             {protocoloSelecionado.caloriasTotal && (
-              <Text style={styles.total}>
-                Total de calorias: {protocoloSelecionado.caloriasTotal} kcal
-              </Text>
+              <View style={styles.caloriesBox}>
+                <Text style={styles.caloriesText}>
+                  🔥 Total de calorias: {protocoloSelecionado.caloriasTotal}{" "}
+                  kcal
+                </Text>
+              </View>
             )}
 
-            <Text style={styles.createdText}>
-              Criado em: {new Date(protocoloSelecionado.criadoEm).toLocaleDateString("pt-BR")}
-            </Text>
-            <Text style={styles.createdText}>
-              Versão: {protocoloSelecionado.versao}
-            </Text>
+            <View style={styles.footerMeta}>
+              <Text style={styles.footerMetaText}>
+                Criado em{" "}
+                {new Date(protocoloSelecionado.criadoEm).toLocaleDateString(
+                  "pt-BR",
+                )}
+              </Text>
+              <Text style={styles.footerMetaText}>
+                Versão {protocoloSelecionado.versao}
+              </Text>
+            </View>
           </View>
         </ScrollView>
       </View>
@@ -170,115 +236,161 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: "row",
-    backgroundColor: "#f2f2f2",
-    padding: 20,
+    backgroundColor: "#f8fafc",
+    padding: 24,
+    gap: 0,
   },
 
   centerContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f2f2f2",
+    backgroundColor: "#f8fafc",
+    gap: 8,
+  },
+
+  emptyEmoji: {
+    fontSize: 40,
+    marginBottom: 8,
+  },
+
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#374151",
+  },
+
+  emptySubtitle: {
+    fontSize: 13,
+    color: "#94a3b8",
+    textAlign: "center",
+    maxWidth: 260,
   },
 
   left: {
-    width: 300,
+    width: 280,
+    paddingRight: 16,
   },
 
   right: {
     flex: 1,
-    paddingLeft: 20,
+    paddingLeft: 16,
   },
 
   title: {
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 15,
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#0f172a",
+    marginBottom: 14,
   },
 
   search: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 10,
+    backgroundColor: "#fff",
+    borderWidth: 1.5,
+    borderColor: "#e2e8f0",
+    padding: 11,
     borderRadius: 10,
-    marginBottom: 15,
+    marginBottom: 12,
+    fontSize: 14,
+    color: "#0f172a",
+  },
+
+  searchFocused: {
+    borderColor: "#19c10f",
   },
 
   card: {
     backgroundColor: "#fff",
-    padding: 15,
+    padding: 14,
     borderRadius: 12,
     marginBottom: 10,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
+    shadowColor: "#64748b",
+    shadowOpacity: 0.07,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+    borderLeftWidth: 3,
+    borderLeftColor: "transparent",
   },
 
   selectedCard: {
-    backgroundColor: "#d4f7d4",
+    borderLeftColor: "#19c10f",
+    backgroundColor: "#f0fdf0",
   },
 
   cardTitle: {
-    fontWeight: "bold",
-    marginBottom: 8,
+    fontWeight: "600",
+    marginBottom: 6,
     fontSize: 14,
+    color: "#0f172a",
   },
 
-  cardText: {
+  selectedCardTitle: {
+    color: "#15803d",
+  },
+
+  cardMeta: {
     fontSize: 12,
-    color: "#666",
-    marginBottom: 3,
+    color: "#64748b",
+    marginBottom: 2,
   },
 
   divider: {
     width: 1,
-    backgroundColor: "#ccc",
-    marginHorizontal: 15,
+    backgroundColor: "#e2e8f0",
   },
 
   detailCard: {
     backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 15,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
+    padding: 24,
+    borderRadius: 16,
+    shadowColor: "#64748b",
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
   },
 
   detailTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10,
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#0f172a",
+    marginBottom: 12,
   },
 
-  doctorText: {
-    marginBottom: 8,
-    fontSize: 14,
-    color: "#333",
+  metaRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 20,
+    flexWrap: "wrap",
   },
 
-  typeText: {
-    marginBottom: 15,
+  metaBadge: {
+    backgroundColor: "#f1f5f9",
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 99,
+  },
+
+  metaBadgeText: {
     fontSize: 13,
-    color: "#666",
-    fontStyle: "italic",
+    color: "#475569",
+    fontWeight: "500",
   },
 
   section: {
-    marginTop: 18,
-    marginBottom: 10,
-    fontWeight: "600",
+    marginTop: 20,
+    marginBottom: 12,
+    fontWeight: "700",
     fontSize: 15,
-    color: "#19c10f",
+    color: "#0f172a",
   },
 
   contentItem: {
-    marginBottom: 12,
-    backgroundColor: "#f9f9f9",
-    padding: 10,
-    borderRadius: 8,
+    marginBottom: 10,
+    backgroundColor: "#f8fafc",
+    padding: 12,
+    borderRadius: 10,
     borderLeftWidth: 3,
     borderLeftColor: "#19c10f",
   },
@@ -286,46 +398,51 @@ const styles = StyleSheet.create({
   contentTitle: {
     fontWeight: "600",
     fontSize: 13,
-    color: "#333",
+    color: "#0f172a",
     marginBottom: 4,
   },
 
   contentText: {
     fontSize: 12,
-    color: "#666",
+    color: "#64748b",
     marginTop: 2,
   },
 
-  text: {
-    marginTop: 5,
+  plainText: {
     fontSize: 13,
-    color: "#333",
+    color: "#374151",
+    marginTop: 4,
   },
 
-  total: {
+  caloriesBox: {
     marginTop: 20,
-    fontWeight: "bold",
-    fontSize: 15,
-    color: "#19c10f",
-    backgroundColor: "#f0f9f0",
-    padding: 12,
-    borderRadius: 8,
+    backgroundColor: "#f0fdf0",
+    padding: 14,
+    borderRadius: 10,
   },
 
-  createdText: {
-    marginTop: 10,
+  caloriesText: {
+    fontWeight: "700",
+    fontSize: 14,
+    color: "#15803d",
+  },
+
+  footerMeta: {
+    marginTop: 20,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#f1f5f9",
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+
+  footerMetaText: {
     fontSize: 12,
-    color: "#999",
+    color: "#94a3b8",
   },
 
   errorText: {
-    color: "red",
-    fontSize: 16,
-    textAlign: "center",
-  },
-
-  emptyText: {
-    color: "#999",
+    color: "#ef4444",
     fontSize: 16,
     textAlign: "center",
   },

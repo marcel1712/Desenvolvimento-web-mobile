@@ -1,9 +1,25 @@
-import { router } from "expo-router";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-
-import { usePathname } from "expo-router";
+import { router, usePathname } from "expo-router";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useAuth } from "../hooks/auth/useAuth";
 import { useModal } from "../hooks/useModal";
+
+const NAV_ITEMS = [
+  { label: "Início", icon: "🏠", route: "/(app)/inicio", key: "inicio" },
+  { label: "Anamnese", icon: "🧾", route: "/(app)/anamnese", key: "anamnese" },
+  {
+    label: "Consultas",
+    icon: "📅",
+    route: "/(app)/consultas",
+    key: "consultas",
+  },
+  {
+    label: "Protocolos",
+    icon: "📊",
+    route: "/(app)/protocolos",
+    key: "protocolos",
+  },
+  { label: "Perfil", icon: "👤", route: "/(app)/perfil", key: "perfil" },
+] as const;
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -15,107 +31,184 @@ export default function Sidebar() {
     router.replace("/login");
   }
 
-  function isActive(route: string) {
-    return pathname.includes(route);
+  function isActive(key: string) {
+    return pathname.includes(key);
   }
 
   return (
     <View style={styles.sidebar}>
-      <Text style={styles.logo}>VitalGoal</Text>
+      {/* Logo */}
+      <View style={styles.logoRow}>
+        <View style={styles.logoIcon}>
+          <Text style={styles.logoIconText}>VG</Text>
+        </View>
+        <Text style={styles.logoText}>VitalGoal</Text>
+      </View>
 
-      <TouchableOpacity onPress={() => router.push("/(app)/inicio")}>
-        <Text style={[styles.item, isActive("inicio") && styles.active]}>
-          Início
-        </Text>
-      </TouchableOpacity>
+      <View style={styles.divider} />
 
-      <TouchableOpacity onPress={() => router.push("/(app)/anamnese")}>
-        <Text style={[styles.item, isActive("anamnese") && styles.active]}>
-          Anamnese
-        </Text>
-      </TouchableOpacity>
+      {/* Nav */}
+      <View style={styles.nav}>
+        {NAV_ITEMS.map((item) => {
+          const active = isActive(item.key);
+          return (
+            <Pressable
+              key={item.key}
+              style={({ pressed }) => [
+                styles.navItem,
+                active && styles.navItemActive,
+                !active && pressed && styles.navItemPressed,
+              ]}
+              onPress={() => router.push(item.route)}
+            >
+              <Text style={styles.navIcon}>{item.icon}</Text>
+              <Text style={[styles.navLabel, active && styles.navLabelActive]}>
+                {item.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
 
-      <TouchableOpacity onPress={() => router.push("/(app)/consultas")}>
-        <Text style={[styles.item, isActive("consultas") && styles.active]}>
-          Consultas
-        </Text>
-      </TouchableOpacity>
+      <View style={{ flex: 1 }} />
 
-      <TouchableOpacity onPress={() => router.push("/(app)/protocolos")}>
-        <Text style={[styles.item, isActive("protocolos") && styles.active]}>
-          Protocolos
-        </Text>
-      </TouchableOpacity>
+      {/* Agendar */}
+      <Pressable
+        style={({ pressed }) => [
+          styles.scheduleBtn,
+          pressed && { opacity: 0.85 },
+        ]}
+        onPress={() => setOpenModal(true)}
+      >
+        <Text style={styles.scheduleBtnText}>＋ Agendar Consulta</Text>
+      </Pressable>
 
-      <TouchableOpacity onPress={() => router.push("/(app)/perfil")}>
-        <Text style={[styles.item, isActive("perfil") && styles.active]}>
-          Profile
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.button} onPress={() => setOpenModal(true)}>
-        <Text style={styles.buttonText}>Agendar Consulta</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutButtonText}>Logout</Text>
-      </TouchableOpacity>
+      {/* Logout */}
+      <Pressable
+        style={({ pressed }) => [
+          styles.logoutBtn,
+          pressed && { opacity: 0.75 },
+        ]}
+        onPress={handleLogout}
+      >
+        <Text style={styles.logoutBtnText}>↩ Sair</Text>
+      </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   sidebar: {
-    width: 220,
-    backgroundColor: "#f5f5f5",
-    padding: 20,
+    width: 230,
+    backgroundColor: "#fff",
+    paddingHorizontal: 16,
+    paddingVertical: 24,
     height: "100%",
+    borderRightWidth: 1,
+    borderRightColor: "#e2e8f0",
   },
 
-  logo: {
-    fontWeight: "bold",
-    marginBottom: 20,
+  logoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 4,
+    marginBottom: 16,
   },
 
-  item: {
-    marginVertical: 10,
-    padding: 8,
-    borderRadius: 8,
-  },
-
-  active: {
-    backgroundColor: "#d4f7d4",
-    color: "#19c10f",
-    fontWeight: "bold",
-  },
-
-  button: {
-    marginTop: 20,
+  logoIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     backgroundColor: "#19c10f",
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center", // 👈 centraliza horizontal
-    justifyContent: "center", // 👈 centraliza vertical
-  },
-
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-
-  logoutButton: {
-    marginTop: 10,
-    backgroundColor: "#d32f2f",
-    padding: 12,
-    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
   },
 
-  logoutButtonText: {
+  logoIconText: {
     color: "#fff",
-    fontWeight: "bold",
-    textAlign: "center",
+    fontWeight: "800",
+    fontSize: 14,
+  },
+
+  logoText: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#0f172a",
+  },
+
+  divider: {
+    height: 1,
+    backgroundColor: "#f1f5f9",
+    marginBottom: 12,
+  },
+
+  nav: {
+    gap: 2,
+  },
+
+  navItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 11,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+  },
+
+  navItemActive: {
+    backgroundColor: "#f0fdf0",
+  },
+
+  navItemPressed: {
+    backgroundColor: "#f8fafc",
+  },
+
+  navIcon: {
+    fontSize: 16,
+  },
+
+  navLabel: {
+    fontSize: 14,
+    color: "#475569",
+    fontWeight: "500",
+  },
+
+  navLabelActive: {
+    color: "#19c10f",
+    fontWeight: "700",
+  },
+
+  scheduleBtn: {
+    backgroundColor: "#19c10f",
+    paddingVertical: 13,
+    borderRadius: 12,
+    alignItems: "center",
+    marginBottom: 8,
+    shadowColor: "#19c10f",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+
+  scheduleBtnText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 13,
+  },
+
+  logoutBtn: {
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: "#e2e8f0",
+  },
+
+  logoutBtnText: {
+    color: "#64748b",
+    fontWeight: "600",
+    fontSize: 13,
   },
 });

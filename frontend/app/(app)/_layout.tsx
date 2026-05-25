@@ -1,11 +1,18 @@
-import { Redirect, Stack } from "expo-router";
+import { Stack } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { useAuth } from "../../hooks/auth/useAuth";
-import { useModal } from "../../hooks/useModal";
-import { useMedicos } from "../../hooks/useMedicos";
-import { useAgendarConsulta } from "../../hooks/useAgendarConsulta";
+import {
+  ActivityIndicator,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import Sidebar from "../../components/sidebar";
+import { useAuth } from "../../hooks/auth/useAuth";
+import { useAgendarConsulta } from "../../hooks/useAgendarConsulta";
+import { useMedicos } from "../../hooks/useMedicos";
+import { useModal } from "../../hooks/useModal";
 
 export default function AppLayout() {
   const { token, isLoading } = useAuth();
@@ -19,7 +26,9 @@ export default function AppLayout() {
   const [selectedDoctorId, setSelectedDoctorId] = useState<number | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [selectedType, setSelectedType] = useState<"presencial" | "teleconsulta">("presencial");
+  const [selectedType, setSelectedType] = useState<
+    "presencial" | "teleconsulta"
+  >("presencial");
 
   if (isLoading) {
     return (
@@ -29,9 +38,9 @@ export default function AppLayout() {
     );
   }
 
-  if (!token) {
-    return <Redirect href="/login" />;
-  }
+  // if (!token) {
+  //   return <Redirect href="/login" />;
+  // }
 
   const getNextDays = () => {
     const days = [];
@@ -111,7 +120,11 @@ export default function AppLayout() {
                 <Text style={styles.title}>Nova Consulta</Text>
 
                 {loadingMedicos ? (
-                  <ActivityIndicator size="large" color="#19c10f" style={{ marginTop: 20 }} />
+                  <ActivityIndicator
+                    size="large"
+                    color="#19c10f"
+                    style={{ marginTop: 20 }}
+                  />
                 ) : medicos.length === 0 ? (
                   <Text style={styles.emptyText}>Nenhum médico disponível</Text>
                 ) : (
@@ -152,7 +165,9 @@ export default function AppLayout() {
               <>
                 <Text style={styles.title}>{selectedDoctor?.nome}</Text>
 
-                <Text style={{ marginTop: 10, fontWeight: "600" }}>Selecione a data</Text>
+                <Text style={{ marginTop: 10, fontWeight: "600" }}>
+                  Selecione a data
+                </Text>
 
                 <View style={styles.datesContainer}>
                   {getNextDays().map((date, i) => (
@@ -168,7 +183,8 @@ export default function AppLayout() {
                       <Text
                         style={[
                           styles.dateButtonText,
-                          selectedDate?.toDateString() === date.toDateString() &&
+                          selectedDate?.toDateString() ===
+                            date.toDateString() &&
                             styles.selectedDateButtonText,
                         ]}
                       >
@@ -181,44 +197,53 @@ export default function AppLayout() {
                   ))}
                 </View>
 
-                <Text style={{ marginTop: 20, fontWeight: "600" }}>Horários disponíveis</Text>
+                <Text style={{ marginTop: 20, fontWeight: "600" }}>
+                  Horários disponíveis
+                </Text>
 
                 <View style={styles.times}>
-                  {["08:00", "10:00", "14:00", "16:00", "18:00"].map((time, i) => (
-                    <TouchableOpacity
-                      key={i}
-                      style={[
-                        styles.timeButton,
-                        selectedTime === time && styles.selectedTimeButton,
-                      ]}
-                      onPress={() => setSelectedTime(time)}
-                    >
-                      <Text
+                  {["08:00", "10:00", "14:00", "16:00", "18:00"].map(
+                    (time, i) => (
+                      <TouchableOpacity
+                        key={i}
                         style={[
-                          styles.timeButtonText,
-                          selectedTime === time && styles.selectedTimeButtonText,
+                          styles.timeButton,
+                          selectedTime === time && styles.selectedTimeButton,
                         ]}
+                        onPress={() => setSelectedTime(time)}
                       >
-                        {time}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                        <Text
+                          style={[
+                            styles.timeButtonText,
+                            selectedTime === time &&
+                              styles.selectedTimeButtonText,
+                          ]}
+                        >
+                          {time}
+                        </Text>
+                      </TouchableOpacity>
+                    ),
+                  )}
                 </View>
 
-                <Text style={{ marginTop: 20, fontWeight: "600" }}>Tipo de Consulta</Text>
+                <Text style={{ marginTop: 20, fontWeight: "600" }}>
+                  Tipo de Consulta
+                </Text>
 
                 <View style={styles.typeContainer}>
                   <TouchableOpacity
                     style={[
                       styles.typeButton,
-                      selectedType === "presencial" && styles.selectedTypeButton,
+                      selectedType === "presencial" &&
+                        styles.selectedTypeButton,
                     ]}
                     onPress={() => setSelectedType("presencial")}
                   >
                     <Text
                       style={[
                         styles.typeButtonText,
-                        selectedType === "presencial" && styles.selectedTypeButtonText,
+                        selectedType === "presencial" &&
+                          styles.selectedTypeButtonText,
                       ]}
                     >
                       Presencial
@@ -228,14 +253,16 @@ export default function AppLayout() {
                   <TouchableOpacity
                     style={[
                       styles.typeButton,
-                      selectedType === "teleconsulta" && styles.selectedTypeButton,
+                      selectedType === "teleconsulta" &&
+                        styles.selectedTypeButton,
                     ]}
                     onPress={() => setSelectedType("teleconsulta")}
                   >
                     <Text
                       style={[
                         styles.typeButtonText,
-                        selectedType === "teleconsulta" && styles.selectedTypeButtonText,
+                        selectedType === "teleconsulta" &&
+                          styles.selectedTypeButtonText,
                       ]}
                     >
                       Teleconsulta
