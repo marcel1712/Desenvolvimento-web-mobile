@@ -2,10 +2,12 @@ import { router } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { useLogin } from "../hooks/auth/useLogin";
@@ -13,47 +15,71 @@ import { useLogin } from "../hooks/auth/useLogin";
 export default function Login() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [senhaFocused, setSenhaFocused] = useState(false);
   const { handleLogin, isLoading, error } = useLogin();
 
   return (
-    <View style={styles.container}>
-      {/* Logo / Nome */}
-      <Text style={styles.logo}>VitalGoal</Text>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      {/* Logo */}
+      <View style={styles.logoRow}>
+        <View style={styles.logoIcon}>
+          <Text style={styles.logoIconText}>VG</Text>
+        </View>
+        <Text style={styles.logoText}>VitalGoal</Text>
+      </View>
 
-      {/* Texto topo */}
-      <Text style={styles.title}>Que bom ter você aqui!</Text>
+      <Text style={styles.title}>Bem-vindo de volta! 👋</Text>
       <Text style={styles.subtitle}>Faça login para continuar.</Text>
 
       {/* Card */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Login</Text>
-        {/* Email */}
-        <Text style={styles.label}>E-mail:</Text>
+
+        <Text style={styles.label}>E-mail</Text>
         <TextInput
-          placeholder="Digite seu e-mail"
+          placeholder="seu@email.com"
           value={email}
           onChangeText={setEmail}
-          style={styles.input}
+          style={[styles.input, emailFocused && styles.inputFocused]}
+          onFocus={() => setEmailFocused(true)}
+          onBlur={() => setEmailFocused(false)}
           autoCapitalize="none"
           keyboardType="email-address"
+          placeholderTextColor="#94a3b8"
         />
-        {/* Senha */}
-        <Text style={styles.label}>Senha:</Text>
+
+        <Text style={styles.label}>Senha</Text>
         <TextInput
-          placeholder="Crie uma senha"
+          placeholder="••••••••"
           value={senha}
           onChangeText={setSenha}
           secureTextEntry
-          style={styles.input}
+          style={[styles.input, senhaFocused && styles.inputFocused]}
+          onFocus={() => setSenhaFocused(true)}
+          onBlur={() => setSenhaFocused(false)}
+          placeholderTextColor="#94a3b8"
         />
 
-        {error && <Text style={styles.error}>{error}</Text>}
+        {error && (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
 
-        {/* Recuperar senha */}
-        <Text style={styles.forgot}>Recuperar senha</Text>
-        {/* Botão */}
-        <TouchableOpacity
-          style={[styles.button, isLoading && styles.buttonDisabled]}
+        <Pressable>
+          <Text style={styles.forgot}>Esqueceu a senha?</Text>
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.button,
+            pressed && { opacity: 0.85 },
+            isLoading && styles.buttonDisabled,
+          ]}
           onPress={() => handleLogin(email, senha)}
           disabled={isLoading}
         >
@@ -62,140 +88,181 @@ export default function Login() {
           ) : (
             <Text style={styles.buttonText}>Entrar</Text>
           )}
-        </TouchableOpacity>
+        </Pressable>
 
-        <TouchableOpacity onPress={() => router.push("/register")}>
-          <Text>Ainda não tem uma conta? Criar conta</Text>
-        </TouchableOpacity>
+        <Pressable
+          style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.7 }]}
+          onPress={() => router.push("/register")}
+        >
+          <Text style={styles.linkText}>
+            Ainda não tem uma conta?{" "}
+            <Text style={styles.linkBold}>Criar conta</Text>
+          </Text>
+        </Pressable>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f2f2f2",
+    backgroundColor: "#f8fafc",
     alignItems: "center",
     justifyContent: "center",
-    padding: 20,
+    padding: 24,
   },
 
-  logo: {
+  logoRow: {
+    flexDirection: "row",
+    alignItems: "center",
     position: "absolute",
-    top: 50,
-    left: 20,
-    fontSize: 20,
-    fontWeight: "bold",
+    top: 52,
+    left: 24,
+    gap: 8,
   },
 
-  createAccount: {
-    marginTop: 15,
-    textAlign: "center",
-    color: "#19c10f",
-    fontWeight: "500",
+  logoIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: "#19c10f",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  logoIconText: {
+    color: "#fff",
+    fontWeight: "800",
+    fontSize: 13,
+  },
+
+  logoText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#0f172a",
   },
 
   title: {
-    fontSize: 22,
-    fontWeight: "600",
-    marginTop: 40,
+    fontSize: 26,
+    fontWeight: "700",
+    color: "#0f172a",
+    marginBottom: 6,
+    textAlign: "center",
   },
 
   subtitle: {
-    fontSize: 16,
-    marginBottom: 20,
+    fontSize: 15,
+    color: "#64748b",
+    marginBottom: 28,
+    textAlign: "center",
   },
 
   card: {
     width: "100%",
-    maxWidth: 400,
+    maxWidth: 420,
     backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 15,
-
-    // sombra (web + mobile)
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
+    padding: 28,
+    borderRadius: 20,
+    shadowColor: "#64748b",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    elevation: 4,
   },
 
   cardTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 10,
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#0f172a",
+    marginBottom: 20,
   },
 
   label: {
-    marginTop: 10,
-    marginBottom: 5,
-    fontWeight: "500",
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#374151",
+    marginBottom: 6,
+    marginTop: 14,
   },
 
   input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
+    backgroundColor: "#f1f5f9",
+    borderWidth: 1.5,
+    borderColor: "#e2e8f0",
+    padding: 14,
+    borderRadius: 12,
+    fontSize: 15,
+    color: "#0f172a",
+  },
+
+  inputFocused: {
+    borderColor: "#19c10f",
+    backgroundColor: "#fff",
+  },
+
+  errorBox: {
+    marginTop: 12,
+    backgroundColor: "#fef2f2",
+    borderLeftWidth: 3,
+    borderLeftColor: "#ef4444",
     padding: 12,
-    borderRadius: 10,
+    borderRadius: 8,
+  },
+
+  errorText: {
+    color: "#ef4444",
+    fontSize: 13,
+    fontWeight: "500",
   },
 
   forgot: {
     marginTop: 10,
-    marginBottom: 15,
-    color: "#555",
+    marginBottom: 4,
+    color: "#19c10f",
+    fontSize: 13,
+    fontWeight: "500",
+    textAlign: "right",
   },
 
   button: {
     backgroundColor: "#19c10f",
-    padding: 15,
-    borderRadius: 10,
+    paddingVertical: 16,
+    borderRadius: 14,
     alignItems: "center",
+    marginTop: 18,
+    shadowColor: "#19c10f",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
 
   buttonDisabled: {
     opacity: 0.6,
+    shadowOpacity: 0,
+    elevation: 0,
   },
 
   buttonText: {
     color: "#fff",
-    fontWeight: "bold",
+    fontWeight: "700",
+    fontSize: 16,
+    letterSpacing: 0.3,
   },
 
-  error: {
-    color: "#e53935",
-    fontSize: 13,
-    marginTop: 8,
-  },
-
-  dividerContainer: {
-    flexDirection: "row",
+  linkRow: {
+    marginTop: 18,
     alignItems: "center",
-    marginVertical: 15,
   },
 
-  line: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#ccc",
+  linkText: {
+    fontSize: 14,
+    color: "#64748b",
   },
 
-  dividerText: {
-    marginHorizontal: 10,
-    fontSize: 12,
-  },
-
-  socialContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-
-  socialButton: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "#19c10f",
-    padding: 12,
-    borderRadius: 10,
-    alignItems: "center",
-    marginHorizontal: 5,
+  linkBold: {
+    color: "#19c10f",
+    fontWeight: "700",
   },
 });

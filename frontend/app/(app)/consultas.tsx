@@ -1,27 +1,57 @@
 import { useState } from "react";
 import {
   ActivityIndicator,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
-import { useModal } from "../../hooks/useModal";
 import { useConsultas } from "../../hooks/useConsultas";
+import { useModal } from "../../hooks/useModal";
+
+function StatusBadge({ status }: { status: string }) {
+  const map: Record<string, { bg: string; text: string }> = {
+    Concluído: { bg: "#dcfce7", text: "#15803d" },
+    Concluida: { bg: "#dcfce7", text: "#15803d" },
+    Pendente: { bg: "#fef3c7", text: "#b45309" },
+    Agendado: { bg: "#dbeafe", text: "#1d4ed8" },
+    Cancelado: { bg: "#fee2e2", text: "#b91c1c" },
+    Aprovado: { bg: "#dcfce7", text: "#15803d" },
+  };
+  const style = map[status] ?? { bg: "#f1f5f9", text: "#475569" };
+  return (
+    <View style={[badge.pill, { backgroundColor: style.bg }]}>
+      <Text style={[badge.text, { color: style.text }]}>{status}</Text>
+    </View>
+  );
+}
+
+const badge = StyleSheet.create({
+  pill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 99,
+  },
+  text: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+});
 
 export default function Consultas() {
   const [searchText, setSearchText] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
   const { setOpenModal } = useModal();
   const { consultas, isLoading, error } = useConsultas();
 
   const consultasFiltradas = consultas.filter((consulta) => {
-    const searchLower = searchText.toLowerCase();
+    const q = searchText.toLowerCase();
     return (
-      consulta.paciente.nome.toLowerCase().includes(searchLower) ||
-      consulta.status.toLowerCase().includes(searchLower) ||
-      consulta.tipo.toLowerCase().includes(searchLower)
+      consulta.paciente.nome.toLowerCase().includes(q) ||
+      consulta.status.toLowerCase().includes(q) ||
+      consulta.tipo.toLowerCase().includes(q)
     );
   });
 
@@ -42,44 +72,58 @@ export default function Consultas() {
   }
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Título */}
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <Text style={styles.title}>Próximas consultas</Text>
 
-      {/* Topo */}
+      {/* Barra de ações */}
       <View style={styles.topBar}>
         <TextInput
           placeholder="Buscar por nome, tipo ou status..."
-          placeholderTextColor="#999"
-          style={styles.search}
+          placeholderTextColor="#94a3b8"
+          style={[styles.search, searchFocused && styles.searchFocused]}
           value={searchText}
           onChangeText={setSearchText}
+          onFocus={() => setSearchFocused(true)}
+          onBlur={() => setSearchFocused(false)}
         />
 
-        <TouchableOpacity style={styles.button} onPress={() => setOpenModal(true)}>
-          <Text style={styles.buttonText}>Agendar Consulta</Text>
-        </TouchableOpacity>
+        <Pressable
+          style={({ pressed }) => [styles.button, pressed && { opacity: 0.85 }]}
+          onPress={() => setOpenModal(true)}
+        >
+          <Text style={styles.buttonText}>＋ Agendar</Text>
+        </Pressable>
       </View>
 
       {/* Lista */}
       {consultas.length === 0 ? (
-        <View style={styles.card}>
-          <Text style={styles.emptyText}>Nenhuma consulta agendada</Text>
+        <View style={styles.emptyCard}>
+          <Text style={styles.emptyEmoji}>📅</Text>
+          <Text style={styles.emptyTitle}>Nenhuma consulta agendada</Text>
+          <Text style={styles.emptySubtitle}>
+            Clique em "＋ Agendar" para criar sua primeira consulta.
+          </Text>
         </View>
       ) : consultasFiltradas.length === 0 ? (
-        <View style={styles.card}>
-          <Text style={styles.emptyText}>Nenhuma consulta encontrada</Text>
+        <View style={styles.emptyCard}>
+          <Text style={styles.emptyEmoji}>🔍</Text>
+          <Text style={styles.emptyTitle}>Nenhum resultado</Text>
+          <Text style={styles.emptySubtitle}>Tente outro termo de busca.</Text>
         </View>
       ) : (
         consultasFiltradas.map((consulta) => (
           <View key={consulta.id} style={styles.card}>
-            <Text style={styles.header}>{consulta.paciente.nome}</Text>
+            {/* Header do card */}
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardName}>{consulta.paciente.nome}</Text>
+              <StatusBadge status={consulta.status} />
+            </View>
 
-            <View style={styles.row}>
-              <View>
-                <Text style={styles.label}>Data / Horário</Text>
-                <Text>
-                  {new Date(consulta.dataHora).toLocaleDateString("pt-BR")} -{" "}
+            <View style={styles.infoGrid}>
+              <View style={styles.infoItem}>
+                <Text style={styles.infoLabel}>Data / Horário</Text>
+                <Text style={styles.infoValue}>
+                  {new Date(consulta.dataHora).toLocaleDateString("pt-BR")} •{" "}
                   {new Date(consulta.dataHora).toLocaleTimeString("pt-BR", {
                     hour: "2-digit",
                     minute: "2-digit",
@@ -87,47 +131,36 @@ export default function Consultas() {
                 </Text>
               </View>
 
-              <View>
-                <Text style={styles.label}>Status pagamento</Text>
-                <Text
-                  style={
-                    consulta.statusPagamento === "Aprovado"
-                      ? styles.approved
-                      : styles.pending
-                  }
-                >
-                  {consulta.statusPagamento}
-                </Text>
+              <View style={styles.infoItem}>
+                <Text style={styles.infoLabel}>Tipo</Text>
+                <Text style={styles.infoValue}>{consulta.tipo}</Text>
+              </View>
+
+              <View style={styles.infoItem}>
+                <Text style={styles.infoLabel}>Pagamento</Text>
+                <StatusBadge status={consulta.statusPagamento} />
               </View>
             </View>
 
-            <View style={styles.row}>
-              <View>
-                <Text style={styles.label}>Tipo</Text>
-                <Text>{consulta.tipo}</Text>
-              </View>
-
-              <View>
-                <Text style={styles.label}>Status</Text>
-                <Text>{consulta.status}</Text>
-              </View>
-            </View>
-
-            <View style={styles.row}>
-              <View>
-                <Text style={styles.label}>Documentos</Text>
-                <TouchableOpacity style={styles.docButton}>
-                  <Text>Ver documentos</Text>
-                </TouchableOpacity>
-              </View>
+            <View style={styles.cardFooter}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.docBtn,
+                  pressed && { opacity: 0.75 },
+                ]}
+              >
+                <Text style={styles.docBtnText}>📄 Ver documentos</Text>
+              </Pressable>
 
               {consulta.tipo === "teleconsulta" && (
-                <View>
-                  <Text style={styles.label}>Reunião</Text>
-                  <TouchableOpacity style={styles.meetButton}>
-                    <Text style={{ color: "#fff" }}>Entrar via meet</Text>
-                  </TouchableOpacity>
-                </View>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.meetBtn,
+                    pressed && { opacity: 0.85 },
+                  ]}
+                >
+                  <Text style={styles.meetBtnText}>🎥 Entrar via meet</Text>
+                </Pressable>
               )}
             </View>
           </View>
@@ -140,110 +173,187 @@ export default function Consultas() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: "#f2f2f2",
+    padding: 24,
+    backgroundColor: "#f8fafc",
   },
 
   centerContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f2f2f2",
+    backgroundColor: "#f8fafc",
   },
 
   title: {
-    fontSize: 22,
-    fontWeight: "bold",
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#0f172a",
     marginBottom: 20,
   },
 
   topBar: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    gap: 12,
     marginBottom: 20,
+    alignItems: "center",
   },
 
   search: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 10,
-    borderRadius: 10,
-    marginRight: 10,
+    backgroundColor: "#fff",
+    borderWidth: 1.5,
+    borderColor: "#e2e8f0",
+    padding: 12,
+    borderRadius: 12,
+    fontSize: 14,
+    color: "#0f172a",
+  },
+
+  searchFocused: {
+    borderColor: "#19c10f",
   },
 
   button: {
     backgroundColor: "#19c10f",
-    paddingHorizontal: 15,
-    justifyContent: "center",
-    borderRadius: 10,
+    paddingHorizontal: 18,
+    paddingVertical: 13,
+    borderRadius: 12,
+    shadowColor: "#19c10f",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
   },
 
   buttonText: {
     color: "#fff",
-    fontWeight: "bold",
+    fontWeight: "700",
+    fontSize: 14,
+  },
+
+  emptyCard: {
+    backgroundColor: "#fff",
+    padding: 40,
+    borderRadius: 16,
+    alignItems: "center",
+    shadowColor: "#64748b",
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+
+  emptyEmoji: {
+    fontSize: 36,
+    marginBottom: 12,
+  },
+
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#374151",
+    marginBottom: 6,
+  },
+
+  emptySubtitle: {
+    fontSize: 13,
+    color: "#94a3b8",
+    textAlign: "center",
   },
 
   card: {
     backgroundColor: "#fff",
     padding: 20,
-    borderRadius: 15,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
+    borderRadius: 16,
+    marginBottom: 16,
+    shadowColor: "#64748b",
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
   },
 
-  header: {
-    fontWeight: "600",
-    marginBottom: 15,
-    fontSize: 16,
-  },
-
-  row: {
+  cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 15,
+    alignItems: "center",
+    marginBottom: 16,
   },
 
-  label: {
-    color: "#666",
-    marginBottom: 5,
-    fontSize: 12,
+  cardName: {
+    fontWeight: "700",
+    fontSize: 16,
+    color: "#0f172a",
   },
 
-  pending: {
-    color: "orange",
-    fontWeight: "bold",
+  infoGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 16,
+    marginBottom: 16,
   },
 
-  approved: {
-    color: "green",
-    fontWeight: "bold",
+  infoItem: {
+    flex: 1,
+    minWidth: 120,
   },
 
-  emptyText: {
-    textAlign: "center",
-    color: "#999",
-    paddingVertical: 20,
+  infoLabel: {
+    color: "#94a3b8",
+    fontSize: 11,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    marginBottom: 4,
+  },
+
+  infoValue: {
+    fontSize: 14,
+    color: "#374151",
+    fontWeight: "500",
+  },
+
+  cardFooter: {
+    flexDirection: "row",
+    gap: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#f1f5f9",
+    paddingTop: 14,
+  },
+
+  docBtn: {
+    backgroundColor: "#f1f5f9",
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 8,
+  },
+
+  docBtnText: {
+    color: "#475569",
+    fontSize: 13,
+    fontWeight: "500",
+  },
+
+  meetBtn: {
+    backgroundColor: "#19c10f",
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 8,
+    shadowColor: "#19c10f",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+
+  meetBtnText: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "600",
   },
 
   errorText: {
-    color: "red",
+    color: "#ef4444",
     fontSize: 16,
     textAlign: "center",
-  },
-
-  docButton: {
-    backgroundColor: "#ddd",
-    padding: 8,
-    borderRadius: 8,
-  },
-
-  meetButton: {
-    backgroundColor: "#19c10f",
-    padding: 8,
-    borderRadius: 8,
   },
 });
