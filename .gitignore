@@ -41,3 +41,11 @@ app-example
 # generated native folders
 /ios
 /android
+
+# specs geradas podem ou não ir pro repo, dependendo do seu flow
+# .kiro/specs/
+
+# settings locais
+.kiro/
+.claude/
+CLAUDE.md
