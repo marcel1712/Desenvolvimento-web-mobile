@@ -1,19 +1,5 @@
 # Gaps de Implementação
 
-## Agendamento de Consulta
-
-**Status: parcialmente feito**
-
-- `POST /api/consultas` existe e o modal no front chama corretamente
-- Horários são hardcoded no frontend (`08:00`, `10:00`, `14:00`, `16:00`, `18:00`) — não refletem disponibilidade real do médico
-- Backend não valida conflito de horário — é possível agendar duas consultas no mesmo médico/horário
-
-**O que falta:**
-- Lógica de disponibilidade do médico (horários livres x ocupados)
-- Validação de conflito no `POST /api/consultas`
-- Medico selecionar dias e horario que atende
----
-
 ## Link Meet (Teleconsulta)
 
 **Status: não implementado**
@@ -52,17 +38,12 @@
 
 | Funcionalidade | Backend | Frontend |
 |---|---|---|
-| Criar consulta (fluxo basico) | Feito | Feito |
-| Validacao de conflito de horario | Nao feito | — |
-| Disponibilidade real do medico | Nao feito | Hardcoded |
 | Link Meet | Nao feito | Botao sem handler |
 | Anamnese (salvar/editar) | Nao feito | Sem integracao |
 | Upload arquivos da anamnese | Nao feito | UI existe |
 Historico de Saude
-Listar anamneses para o medico
 Listar pagamentos recebidos para o medico
 Listar pagamentos efetuados Paciente
 Cancelar Agendamento
-Botao para o usuario efetuar Pagamento
-Certificar que o medico nem o paciente veem coisas que nao deveriam
-Criar um chat entre o medico e os pacientes que ele atende
+Botao para o usuario efetuar Pagamento*
+Criar um chat entre o medico e os pacientes que ele atende*

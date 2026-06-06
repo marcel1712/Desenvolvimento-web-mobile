@@ -8,6 +8,7 @@ import protocolosRouter from "./routes/protocolos";
 import pagamentosRouter from "./routes/pagamentos";
 import metasRouter from "./routes/metas";
 import disponibilidadeRouter from "./routes/disponibilidade";
+import anamnesisRouter from "./routes/anamneses";
 
 const app = express();
 
@@ -22,5 +23,6 @@ app.use("/api/protocolos", protocolosRouter);
 app.use("/api/pagamentos", pagamentosRouter);
 app.use("/api/metas", metasRouter);
 app.use("/api/disponibilidade", disponibilidadeRouter);
+app.use("/api/anamneses", anamnesisRouter);
 
 export default app;
