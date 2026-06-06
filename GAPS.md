@@ -48,37 +48,6 @@
 
 ---
 
-## Edição de Perfil
-
-**Status: backend feito, frontend não existe**
-
-- `PUT /api/users/me` existe no backend
-- Frontend só lê o perfil (`GET /api/users/me`), não há formulário de edição
-- Campos editáveis: `nome`, `telefone`, `fotoUrl`
-
-**O que falta:**
-- Tela ou modal de edição de perfil no frontend
-- Hook `useUpdateProfile` chamando `PUT /api/users/me`
-- Integrar na tela de perfil (botão "Editar")
-
----
-
-## Metas do Paciente
-
-**Status: não implementado**
-
-- Aba "Metas" na tela de perfil existe mas mostra "Em breve"
-- Não há tabela de metas no banco
-- Não há endpoints relacionados
-
-**O que falta:**
-- Definir modelo de dados para metas
-- Migration + schema no banco
-- Endpoints CRUD
-- UI na aba "Metas" do perfil
-
----
-
 ## Resumo Geral
 
 | Funcionalidade | Backend | Frontend |
@@ -87,9 +56,14 @@
 | Validacao de conflito de horario | Nao feito | — |
 | Disponibilidade real do medico | Nao feito | Hardcoded |
 | Link Meet | Nao feito | Botao sem handler |
-| Ver documentos da consulta | Feito (GET) | Botao sem handler |
-| Upload de documentos | Nao feito | Nao feito |
 | Anamnese (salvar/editar) | Nao feito | Sem integracao |
 | Upload arquivos da anamnese | Nao feito | UI existe |
-| Editar perfil | Feito (PUT) | Nao feito |
-| Metas do paciente | Nao feito | Placeholder |
+Medico selecionar dias e horario que atende
+Historico de Saude
+Listar anamneses para o medico
+Listar pagamentos recebidos para o medico
+Listar pagamentos efetuados Paciente
+Cancelar Agendamento
+Botao para o usuario efetuar Pagamento
+Certificar que o medico nem o paciente veem coisas que nao deveriam
+Criar um chat entre o medico e os pacientes que ele atende

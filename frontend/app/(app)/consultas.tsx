@@ -100,13 +100,8 @@ export default function Consultas() {
       {/* Título + contexto do papel */}
       <View style={styles.titleRow}>
         <Text style={[styles.title, isNarrow && styles.titleNarrow]}>
-          {isMedico ? "Minhas consultas" : "Minhas consultas"}
+            Minhas consultas
         </Text>
-        <View style={[styles.rolePill, isMedico ? styles.rolePillMedico : styles.rolePillPaciente]}>
-          <Text style={[styles.roleText, isMedico ? styles.roleTextMedico : styles.roleTextPaciente]}>
-            {isMedico ? "Visão do médico" : "Visão do paciente"}
-          </Text>
-        </View>
       </View>
 
       {/* Barra de ações */}
