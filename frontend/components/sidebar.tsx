@@ -22,7 +22,11 @@ const NAV_ITEMS = [
   { label: "Perfil", icon: "👤", route: "/(app)/perfil", key: "perfil" },
 ] as const;
 
-export default function Sidebar() {
+type SidebarProps = {
+  onClose?: () => void;
+};
+
+export default function Sidebar({ onClose }: SidebarProps) {
   const pathname = usePathname();
   const { logout } = useAuth();
   const { setOpenModal } = useModal();
@@ -39,13 +43,18 @@ export default function Sidebar() {
   }
 
   return (
-    <View style={styles.sidebar}>
+    <View style={[styles.sidebar, onClose && styles.sidebarFull]}>
       {/* Logo */}
       <View style={styles.logoRow}>
         <View style={styles.logoIcon}>
           <Text style={styles.logoIconText}>VG</Text>
         </View>
         <Text style={styles.logoText}>VitalGoal</Text>
+        {onClose && (
+          <Pressable onPress={onClose} style={styles.closeBtn} hitSlop={12}>
+            <Text style={styles.closeBtnText}>✕</Text>
+          </Pressable>
+        )}
       </View>
 
       <View style={styles.divider} />
@@ -62,7 +71,10 @@ export default function Sidebar() {
                 active && styles.navItemActive,
                 !active && pressed && styles.navItemPressed,
               ]}
-              onPress={() => router.push(item.route)}
+              onPress={() => {
+                router.push(item.route);
+                onClose?.();
+              }}
             >
               <Text style={styles.navIcon}>{item.icon}</Text>
               <Text style={[styles.navLabel, active && styles.navLabelActive]}>
@@ -109,6 +121,22 @@ const styles = StyleSheet.create({
     height: "100%",
     borderRightWidth: 1,
     borderRightColor: "#e2e8f0",
+  },
+
+  sidebarFull: {
+    width: "100%",
+    borderRightWidth: 0,
+  },
+
+  closeBtn: {
+    marginLeft: "auto",
+    padding: 4,
+  },
+
+  closeBtnText: {
+    fontSize: 18,
+    color: "#64748b",
+    fontWeight: "600",
   },
 
   logoRow: {

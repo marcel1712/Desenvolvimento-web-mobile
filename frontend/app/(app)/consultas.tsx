@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useAuth } from "../../hooks/auth/useAuth";
 import { useConsultas } from "../../hooks/useConsultas";
 import { useModal } from "../../hooks/useModal";
 
@@ -43,10 +44,7 @@ const badge = StyleSheet.create({
     borderRadius: 99,
     alignSelf: "flex-start",
   },
-  text: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
+  text: { fontSize: 12, fontWeight: "600" },
 });
 
 function capitalize(s: string) {
@@ -58,15 +56,21 @@ export default function Consultas() {
   const [searchFocused, setSearchFocused] = useState(false);
   const { setOpenModal } = useModal();
   const { consultas, isLoading, error } = useConsultas();
+  const { usuario } = useAuth();
   const router = useRouter();
   const { width } = useWindowDimensions();
 
-  const isNarrow = width < 520;
+  const isMedico = usuario?.tipo === "medico";
+  const isNarrow = width < 560;
+  const isVeryNarrow = width < 380;
 
   const consultasFiltradas = consultas.filter((consulta) => {
     const q = searchText.toLowerCase();
+    const pessoa = isMedico
+      ? consulta.paciente?.nome ?? ""
+      : consulta.medico?.nome ?? "";
     return (
-      consulta.paciente.nome.toLowerCase().includes(q) ||
+      pessoa.toLowerCase().includes(q) ||
       consulta.status.toLowerCase().includes(q) ||
       consulta.tipo.toLowerCase().includes(q)
     );
@@ -93,13 +97,26 @@ export default function Consultas() {
       style={[styles.container, isNarrow && styles.containerNarrow]}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={[styles.title, isNarrow && styles.titleNarrow]}>
-        Próximas consultas
-      </Text>
+      {/* Título + contexto do papel */}
+      <View style={styles.titleRow}>
+        <Text style={[styles.title, isNarrow && styles.titleNarrow]}>
+          {isMedico ? "Minhas consultas" : "Minhas consultas"}
+        </Text>
+        <View style={[styles.rolePill, isMedico ? styles.rolePillMedico : styles.rolePillPaciente]}>
+          <Text style={[styles.roleText, isMedico ? styles.roleTextMedico : styles.roleTextPaciente]}>
+            {isMedico ? "Visão do médico" : "Visão do paciente"}
+          </Text>
+        </View>
+      </View>
 
+      {/* Barra de ações */}
       <View style={[styles.topBar, isNarrow && styles.topBarNarrow]}>
         <TextInput
-          placeholder="Buscar por nome, tipo ou status..."
+          placeholder={
+            isMedico
+              ? "Buscar por paciente, tipo ou status..."
+              : "Buscar por médico, tipo ou status..."
+          }
           placeholderTextColor="#94a3b8"
           style={[styles.search, searchFocused && styles.searchFocused]}
           value={searchText}
@@ -108,25 +125,32 @@ export default function Consultas() {
           onBlur={() => setSearchFocused(false)}
         />
 
-        <Pressable
-          style={({ pressed }) => [
-            styles.button,
-            isNarrow && styles.buttonNarrow,
-            pressed && { opacity: 0.85 },
-          ]}
-          onPress={() => setOpenModal(true)}
-        >
-          <Text style={styles.buttonText}>＋ Agendar</Text>
-        </Pressable>
+        {!isMedico && (
+          <Pressable
+            style={({ pressed }) => [
+              styles.button,
+              isVeryNarrow && styles.buttonIcon,
+              pressed && { opacity: 0.85 },
+            ]}
+            onPress={() => setOpenModal(true)}
+          >
+            <Text style={styles.buttonText}>
+              {isVeryNarrow ? "＋" : "＋ Agendar"}
+            </Text>
+          </Pressable>
+        )}
       </View>
 
+      {/* Lista */}
       {consultas.length === 0 ? (
         <View style={styles.emptyCard}>
           <Text style={styles.emptyEmoji}>📅</Text>
           <Text style={styles.emptyTitle}>Nenhuma consulta agendada</Text>
-          <Text style={styles.emptySubtitle}>
-            Clique em "＋ Agendar" para criar sua primeira consulta.
-          </Text>
+          {!isMedico && (
+            <Text style={styles.emptySubtitle}>
+              Clique em "＋ Agendar" para criar sua primeira consulta.
+            </Text>
+          )}
         </View>
       ) : consultasFiltradas.length === 0 ? (
         <View style={styles.emptyCard}>
@@ -135,69 +159,75 @@ export default function Consultas() {
           <Text style={styles.emptySubtitle}>Tente outro termo de busca.</Text>
         </View>
       ) : (
-        consultasFiltradas.map((consulta) => (
-          <View key={consulta.id} style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardName} numberOfLines={1}>
-                {consulta.paciente.nome}
-              </Text>
-              <StatusBadge status={consulta.status} />
-            </View>
+        consultasFiltradas.map((consulta) => {
+          const pessoa = isMedico
+            ? consulta.paciente?.nome ?? "—"
+            : consulta.medico?.nome ?? "—";
+          const pessoaLabel = isMedico ? "Paciente" : "Médico";
+          const pessoaColor = isMedico ? "#1d4ed8" : "#15803d";
+          const pessoaBg = isMedico ? "#dbeafe" : "#dcfce7";
 
-            <View
-              style={[
-                styles.infoGrid,
-                isNarrow && styles.infoGridNarrow,
-              ]}
-            >
-              <View style={isNarrow ? styles.infoItemFull : styles.infoItem}>
-                <Text style={styles.infoLabel}>Data / Horário</Text>
-                <Text style={styles.infoValue}>
-                  {new Date(consulta.dataHora).toLocaleDateString("pt-BR")} •{" "}
-                  {new Date(consulta.dataHora).toLocaleTimeString("pt-BR", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </Text>
+          return (
+            <View key={consulta.id} style={styles.card}>
+              {/* Header: nome + etiqueta de papel + badge de status */}
+              <View style={styles.cardHeader}>
+                <View style={styles.cardPessoa}>
+                  <View style={[styles.pessoaTag, { backgroundColor: pessoaBg }]}>
+                    <Text style={[styles.pessoaTagText, { color: pessoaColor }]}>
+                      {pessoaLabel}
+                    </Text>
+                  </View>
+                  <Text style={styles.cardName} numberOfLines={1}>
+                    {pessoa}
+                  </Text>
+                </View>
+                <StatusBadge status={consulta.status} />
               </View>
 
-              <View style={isNarrow ? styles.infoItemHalf : styles.infoItem}>
-                <Text style={styles.infoLabel}>Tipo</Text>
-                <Text style={styles.infoValue}>
-                  {capitalize(consulta.tipo)}
-                </Text>
+              {/* Info grid */}
+              <View style={[styles.infoGrid, isNarrow && styles.infoGridNarrow]}>
+                <View style={isNarrow ? styles.infoItemFull : styles.infoItem}>
+                  <Text style={styles.infoLabel}>Data / Horário</Text>
+                  <Text style={styles.infoValue}>
+                    {new Date(consulta.dataHora).toLocaleDateString("pt-BR")} •{" "}
+                    {new Date(consulta.dataHora).toLocaleTimeString("pt-BR", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </Text>
+                </View>
+
+                <View style={isNarrow ? styles.infoItemHalf : styles.infoItem}>
+                  <Text style={styles.infoLabel}>Tipo</Text>
+                  <Text style={styles.infoValue}>{capitalize(consulta.tipo)}</Text>
+                </View>
+
+                <View style={isNarrow ? styles.infoItemHalf : styles.infoItem}>
+                  <Text style={styles.infoLabel}>Pagamento</Text>
+                  <StatusBadge status={consulta.statusPagamento} />
+                </View>
               </View>
 
-              <View style={isNarrow ? styles.infoItemHalf : styles.infoItem}>
-                <Text style={styles.infoLabel}>Pagamento</Text>
-                <StatusBadge status={consulta.statusPagamento} />
-              </View>
-            </View>
-
-            <View style={[styles.cardFooter, isNarrow && styles.cardFooterNarrow]}>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.docBtn,
-                  pressed && { opacity: 0.75 },
-                ]}
-                onPress={() => router.push(`/documentos/${consulta.id}`)}
-              >
-                <Text style={styles.docBtnText}>📄 Ver documentos</Text>
-              </Pressable>
-
-              {consulta.tipo === "teleconsulta" && (
+              {/* Footer */}
+              <View style={[styles.cardFooter, isNarrow && styles.cardFooterNarrow]}>
                 <Pressable
-                  style={({ pressed }) => [
-                    styles.meetBtn,
-                    pressed && { opacity: 0.85 },
-                  ]}
+                  style={({ pressed }) => [styles.docBtn, pressed && { opacity: 0.75 }]}
+                  onPress={() => router.push(`/documentos/${consulta.id}`)}
                 >
-                  <Text style={styles.meetBtnText}>🎥 Entrar via meet</Text>
+                  <Text style={styles.docBtnText}>📄 Ver documentos</Text>
                 </Pressable>
-              )}
+
+                {consulta.tipo === "teleconsulta" && consulta.linkMeet && (
+                  <Pressable
+                    style={({ pressed }) => [styles.meetBtn, pressed && { opacity: 0.85 }]}
+                  >
+                    <Text style={styles.meetBtnText}>🎥 Entrar via meet</Text>
+                  </Pressable>
+                )}
+              </View>
             </View>
-          </View>
-        ))
+          );
+        })
       )}
     </ScrollView>
   );
@@ -221,16 +251,49 @@ const styles = StyleSheet.create({
     backgroundColor: "#f8fafc",
   },
 
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 20,
+    flexWrap: "wrap",
+  },
+
   title: {
     fontSize: 24,
     fontWeight: "700",
     color: "#0f172a",
-    marginBottom: 20,
   },
 
   titleNarrow: {
     fontSize: 20,
-    marginBottom: 14,
+  },
+
+  rolePill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 99,
+  },
+
+  rolePillMedico: {
+    backgroundColor: "#ede9fe",
+  },
+
+  rolePillPaciente: {
+    backgroundColor: "#dcfce7",
+  },
+
+  roleText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+
+  roleTextMedico: {
+    color: "#7c3aed",
+  },
+
+  roleTextPaciente: {
+    color: "#15803d",
   },
 
   topBar: {
@@ -271,9 +334,8 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
 
-  buttonNarrow: {
+  buttonIcon: {
     paddingHorizontal: 14,
-    paddingVertical: 11,
   },
 
   buttonText: {
@@ -327,16 +389,35 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
     marginBottom: 16,
     gap: 8,
+  },
+
+  cardPessoa: {
+    flex: 1,
+    gap: 4,
+  },
+
+  pessoaTag: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginBottom: 2,
+  },
+
+  pessoaTagText: {
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
 
   cardName: {
     fontWeight: "700",
     fontSize: 16,
     color: "#0f172a",
-    flex: 1,
   },
 
   infoGrid: {

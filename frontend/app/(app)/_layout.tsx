@@ -23,6 +23,7 @@ export default function AppLayout() {
   const { width, height } = useWindowDimensions();
   const modalWidth = Math.min(width - 32, 560);
   const isNarrow = width < 520;
+  const isMobile = width < 768;
   const { medicos, isLoading: loadingMedicos } = useMedicos();
   const { agendar, isLoading: agendando } = useAgendarConsulta();
   const { showToast } = useToast();
@@ -103,20 +104,27 @@ export default function AppLayout() {
 
   return (
     <View style={styles.container}>
-      {/* Sidebar */}
-      {openSidebar && <Sidebar />}
+      {/* Desktop sidebar — flex sibling */}
+      {!isMobile && openSidebar && <Sidebar />}
 
       <View style={styles.content}>
-        {/* Toggle */}
+        {/* Toggle always visible in content header */}
         <TouchableOpacity
           onPress={() => setOpenSidebar(!openSidebar)}
           style={styles.toggle}
         >
-          <Text>☰</Text>
+          <Text style={styles.toggleText}>☰</Text>
         </TouchableOpacity>
 
         <Stack screenOptions={{ headerShown: false }} />
       </View>
+
+      {/* Mobile sidebar — full-screen overlay */}
+      {isMobile && openSidebar && (
+        <View style={styles.mobileOverlay}>
+          <Sidebar onClose={() => setOpenSidebar(false)} />
+        </View>
+      )}
 
       {/* MODAL GLOBAL */}
       <Modal visible={openModal} transparent animationType="fade">
@@ -311,6 +319,21 @@ const styles = StyleSheet.create({
 
   toggle: {
     padding: 10,
+    alignSelf: "flex-start",
+  },
+
+  toggleText: {
+    fontSize: 18,
+    color: "#374151",
+  },
+
+  mobileOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 50,
   },
 
   overlay: {
@@ -415,6 +438,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
+    width: "100%",
   },
 
   timeButton: {
