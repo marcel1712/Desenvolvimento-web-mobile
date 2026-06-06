@@ -6,6 +6,7 @@ import usersRouter from "./routes/users";
 import consultasRouter from "./routes/consultas";
 import protocolosRouter from "./routes/protocolos";
 import pagamentosRouter from "./routes/pagamentos";
+import metasRouter from "./routes/metas";
 
 const app = express();
 
@@ -18,5 +19,6 @@ app.use("/api/users", usersRouter);
 app.use("/api/consultas", consultasRouter);
 app.use("/api/protocolos", protocolosRouter);
 app.use("/api/pagamentos", pagamentosRouter);
+app.use("/api/metas", metasRouter);
 
 export default app;

@@ -8,6 +8,7 @@ import {
   timestamp,
   pgEnum,
   json,
+  boolean,
 } from "drizzle-orm/pg-core";
 
 export const tipoUsuarioEnum = pgEnum("tipo_usuario", ["paciente", "medico"]);
@@ -132,4 +133,16 @@ export const pagamentos = pgTable("pagamentos", {
   status: statusPagamentoEnum("status").default("pendente").notNull(),
   descricao: text("descricao"),
   criadoEm: timestamp("criado_em").defaultNow().notNull(),
+});
+
+export const metas = pgTable("metas", {
+  id: serial("id").primaryKey(),
+  pacienteId: integer("paciente_id")
+    .references(() => usuarios.id)
+    .notNull(),
+  titulo: varchar("titulo", { length: 255 }).notNull(),
+  descricao: text("descricao"),
+  concluida: boolean("concluida").default(false).notNull(),
+  criadoEm: timestamp("criado_em").defaultNow().notNull(),
+  atualizadoEm: timestamp("atualizado_em").defaultNow().notNull(),
 });

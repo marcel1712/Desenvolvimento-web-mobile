@@ -21,5 +21,9 @@ export async function apiFetch<T>(path: string, options: ApiOptions = {}): Promi
     throw new Error(error.message || "Erro na requisição");
   }
 
+  if (res.status === 204) {
+    return undefined as T;
+  }
+
   return res.json();
 }

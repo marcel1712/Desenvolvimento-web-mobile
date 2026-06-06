@@ -17,6 +17,7 @@ export function useUserProfile() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [version, setVersion] = useState(0);
 
   useEffect(() => {
     if (!token) {
@@ -28,7 +29,11 @@ export function useUserProfile() {
       .then(setProfile)
       .catch((e) => setError(e.message))
       .finally(() => setIsLoading(false));
-  }, [token]);
+  }, [token, version]);
 
-  return { profile, isLoading, error };
+  function refetch() {
+    setVersion((v) => v + 1);
+  }
+
+  return { profile, isLoading, error, refetch };
 }
