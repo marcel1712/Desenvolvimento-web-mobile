@@ -1,7 +1,7 @@
 import { Router } from "express";
 import type { Response } from "express";
 import { alias } from "drizzle-orm/pg-core";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, sql, ne } from "drizzle-orm";
 import multer from "multer";
 import { db } from "../db";
 import { consultas, disponibilidadeMedicos, documentosConsulta, usuarios } from "../db/schema";
@@ -52,6 +52,24 @@ router.get("/", async (req: AuthRequest, res: Response) => {
     .where(filtro);
 
   res.json(lista);
+});
+
+router.get("/pacientes", async (req: AuthRequest, res: Response) => {
+  if (req.user!.tipo !== "medico") {
+    res.status(403).json({ message: "Acesso negado." });
+    return;
+  }
+
+  const rows = await db
+    .selectDistinct({
+      id: usuarios.id,
+      nome: usuarios.nome,
+    })
+    .from(consultas)
+    .leftJoin(usuarios, eq(usuarios.id, consultas.pacienteId))
+    .where(eq(consultas.medicoId, req.user!.id));
+
+  res.json(rows);
 });
 
 const daysOfWeek = [

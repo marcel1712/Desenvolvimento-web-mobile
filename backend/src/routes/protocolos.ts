@@ -1,6 +1,7 @@
 import { Router } from "express";
 import type { Response } from "express";
 import { eq, or } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { db } from "../db";
 import { protocolos, usuarios } from "../db/schema";
 import { authenticate } from "../middlewares/auth";
@@ -15,6 +16,9 @@ router.use(authenticate);
 
 router.get("/", async (req: AuthRequest, res: Response) => {
   const { id, tipo } = req.user!;
+
+  const medicoAlias = alias(usuarios, "medico");
+  const pacienteAlias = alias(usuarios, "paciente");
 
   const filtro =
     tipo === "paciente"
@@ -32,12 +36,17 @@ router.get("/", async (req: AuthRequest, res: Response) => {
       versao: protocolos.versao,
       criadoEm: protocolos.criadoEm,
       medico: {
-        id: usuarios.id,
-        nome: usuarios.nome,
+        id: medicoAlias.id,
+        nome: medicoAlias.nome,
+      },
+      paciente: {
+        id: pacienteAlias.id,
+        nome: pacienteAlias.nome,
       },
     })
     .from(protocolos)
-    .leftJoin(usuarios, eq(usuarios.id, protocolos.medicoId))
+    .leftJoin(medicoAlias, eq(medicoAlias.id, protocolos.medicoId))
+    .leftJoin(pacienteAlias, eq(pacienteAlias.id, protocolos.pacienteId))
     .where(filtro);
 
   res.json(lista);
@@ -90,7 +99,10 @@ router.post(
       return;
     }
 
-    const [protocolo] = await db
+    const medicoAlias = alias(usuarios, "medico");
+    const pacienteAlias = alias(usuarios, "paciente");
+
+    const [inserted] = await db
       .insert(protocolos)
       .values({
         medicoId: req.user!.id,
@@ -101,7 +113,25 @@ router.post(
         conteudoDieta,
         caloriasTotal,
       })
-      .returning();
+      .returning({ id: protocolos.id });
+
+    const [protocolo] = await db
+      .select({
+        id: protocolos.id,
+        titulo: protocolos.titulo,
+        tipo: protocolos.tipo,
+        conteudoExercicios: protocolos.conteudoExercicios,
+        conteudoDieta: protocolos.conteudoDieta,
+        caloriasTotal: protocolos.caloriasTotal,
+        versao: protocolos.versao,
+        criadoEm: protocolos.criadoEm,
+        medico: { id: medicoAlias.id, nome: medicoAlias.nome },
+        paciente: { id: pacienteAlias.id, nome: pacienteAlias.nome },
+      })
+      .from(protocolos)
+      .leftJoin(medicoAlias, eq(medicoAlias.id, protocolos.medicoId))
+      .leftJoin(pacienteAlias, eq(pacienteAlias.id, protocolos.pacienteId))
+      .where(eq(protocolos.id, inserted.id));
 
     res.status(201).json(protocolo);
   }
