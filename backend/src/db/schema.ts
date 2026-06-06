@@ -95,8 +95,11 @@ export const documentosConsulta = pgTable("documentos_consulta", {
     .references(() => consultas.id)
     .notNull(),
   nomeArquivo: varchar("nome_arquivo", { length: 255 }).notNull(),
-  url: text("url").notNull(),
+  blobName: varchar("blob_name", { length: 512 }).notNull(),
   tipoMime: varchar("tipo_mime", { length: 100 }),
+  uploaderId: integer("uploader_id")
+    .references(() => usuarios.id)
+    .notNull(),
   criadoEm: timestamp("criado_em").defaultNow().notNull(),
 });
 

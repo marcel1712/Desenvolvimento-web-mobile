@@ -8,6 +8,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { useRouter } from "expo-router";
 import { useConsultas } from "../../hooks/useConsultas";
 import { useModal } from "../../hooks/useModal";
 
@@ -45,6 +46,7 @@ export default function Consultas() {
   const [searchFocused, setSearchFocused] = useState(false);
   const { setOpenModal } = useModal();
   const { consultas, isLoading, error } = useConsultas();
+  const router = useRouter();
 
   const consultasFiltradas = consultas.filter((consulta) => {
     const q = searchText.toLowerCase();
@@ -148,6 +150,7 @@ export default function Consultas() {
                   styles.docBtn,
                   pressed && { opacity: 0.75 },
                 ]}
+                onPress={() => router.push(`/documentos/${consulta.id}`)}
               >
                 <Text style={styles.docBtnText}>📄 Ver documentos</Text>
               </Pressable>
