@@ -38,10 +38,10 @@
 
 | Funcionalidade | Backend | Frontend |
 |---|---|---|
-| Link Meet | Nao feito | Botao sem handler |
-| Anamnese (salvar/editar) | Nao feito | Sem integracao |
-| Upload arquivos da anamnese | Nao feito | UI existe |
-Historico de Saude
-Listar pagamentos recebidos para o medico
-Listar pagamentos efetuados Paciente
-Cancelar Agendamento
+| Link Meet | Nao feito | Botao sem handler | - Marcel
+| Anamnese (salvar/editar) | Nao feito | Sem integracao - Pedro
+Historico de Saude - Davi
+Listar pagamentos recebidos para o medico - Davi
+Listar pagamentos efetuados Paciente - Davi
+Cancelar Agendamento - Davi
+Botao de confirmar pagamento do lado do medico - Marcel
