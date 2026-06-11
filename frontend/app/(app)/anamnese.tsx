@@ -410,15 +410,6 @@ function PacienteAnamnese() {
         />
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Arquivos</Text>
-        <Pressable style={({ pressed }) => [styles.uploadBox, pressed && { opacity: 0.75 }]}>
-          <Text style={styles.uploadEmoji}>☁️</Text>
-          <Text style={styles.uploadText}>Clique para adicionar ou arraste arquivos</Text>
-          <Text style={styles.uploadSubtext}>PDF, JPG, PNG até 10MB</Text>
-        </Pressable>
-      </View>
-
       <Pressable style={({ pressed }) => [styles.button, pressed && { opacity: 0.85 }]}>
         <Text style={styles.buttonText}>Enviar Anamnese</Text>
       </Pressable>
@@ -645,27 +636,6 @@ const styles = StyleSheet.create({
     minHeight: 80,
     textAlignVertical: "top",
   },
-
-  uploadBox: {
-    borderWidth: 2,
-    borderColor: "#e2e8f0",
-    borderStyle: "dashed",
-    padding: 32,
-    borderRadius: 12,
-    alignItems: "center",
-    backgroundColor: "#f8fafc",
-  },
-
-  uploadEmoji: { fontSize: 32, marginBottom: 10 },
-
-  uploadText: {
-    fontSize: 14,
-    color: "#475569",
-    fontWeight: "500",
-    textAlign: "center",
-  },
-
-  uploadSubtext: { fontSize: 12, color: "#94a3b8", marginTop: 4 },
 
   button: {
     backgroundColor: "#19c10f",
