@@ -1,8 +1,10 @@
 import { router, usePathname } from "expo-router";
+import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useAuth } from "../hooks/auth/useAuth";
 import { useModal } from "../hooks/useModal";
 import { useToast } from "../hooks/useToast";
+import { DisponibilidadePanel } from "./DisponibilidadePanel";
 
 const NAV_ITEMS = [
   { label: "Início", icon: "🏠", route: "/(app)/inicio", key: "inicio" },
@@ -28,9 +30,12 @@ type SidebarProps = {
 
 export default function Sidebar({ onClose }: SidebarProps) {
   const pathname = usePathname();
-  const { logout } = useAuth();
+  const { logout, usuario } = useAuth();
   const { setOpenModal } = useModal();
   const { showToast } = useToast();
+  const [disponibilidadeOpen, setDisponibilidadeOpen] = useState(false);
+
+  const isMedico = usuario?.tipo === "medico";
 
   async function handleLogout() {
     await logout();
@@ -87,16 +92,28 @@ export default function Sidebar({ onClose }: SidebarProps) {
 
       <View style={{ flex: 1 }} />
 
-      {/* Agendar */}
-      <Pressable
-        style={({ pressed }) => [
-          styles.scheduleBtn,
-          pressed && { opacity: 0.85 },
-        ]}
-        onPress={() => setOpenModal(true)}
-      >
-        <Text style={styles.scheduleBtnText}>＋ Agendar Consulta</Text>
-      </Pressable>
+      {/* Agendar / Gerenciar horários */}
+      {isMedico ? (
+        <Pressable
+          style={({ pressed }) => [
+            styles.scheduleBtn,
+            pressed && { opacity: 0.85 },
+          ]}
+          onPress={() => setDisponibilidadeOpen(true)}
+        >
+          <Text style={styles.scheduleBtnText}>🗓 Gerenciar Horários</Text>
+        </Pressable>
+      ) : (
+        <Pressable
+          style={({ pressed }) => [
+            styles.scheduleBtn,
+            pressed && { opacity: 0.85 },
+          ]}
+          onPress={() => setOpenModal(true)}
+        >
+          <Text style={styles.scheduleBtnText}>＋ Agendar Consulta</Text>
+        </Pressable>
+      )}
 
       {/* Logout */}
       <Pressable
@@ -108,6 +125,13 @@ export default function Sidebar({ onClose }: SidebarProps) {
       >
         <Text style={styles.logoutBtnText}>↩ Sair</Text>
       </Pressable>
+
+      {isMedico && (
+        <DisponibilidadePanel
+          visible={disponibilidadeOpen}
+          onClose={() => setDisponibilidadeOpen(false)}
+        />
+      )}
     </View>
   );
 }
