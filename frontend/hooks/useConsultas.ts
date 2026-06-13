@@ -33,5 +33,25 @@ export function useConsultas() {
       .finally(() => setIsLoading(false));
   }, [token, consultasVersion]);
 
-  return { consultas, isLoading, error };
+  async function concluir(consultaId: number) {
+    if (!token) throw new Error("Não autenticado");
+    await apiFetch(`/api/consultas/${consultaId}/concluir`, { method: "PATCH", token });
+    setConsultas((prev) =>
+      prev.map((c) => (c.id === consultaId ? { ...c, status: "concluida" } : c))
+    );
+  }
+
+  async function cancelar(consultaId: number) {
+    if (!token) throw new Error("Não autenticado");
+    await apiFetch(`/api/consultas/${consultaId}/cancelar`, { method: "PATCH", token });
+    setConsultas((prev) =>
+      prev.map((c) =>
+        c.id === consultaId
+          ? { ...c, status: "cancelada", statusPagamento: "cancelado" }
+          : c
+      )
+    );
+  }
+
+  return { consultas, isLoading, error, concluir, cancelar };
 }

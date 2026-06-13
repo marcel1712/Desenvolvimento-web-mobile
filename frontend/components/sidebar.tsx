@@ -9,20 +9,17 @@ import { DisponibilidadePanel } from "./DisponibilidadePanel";
 const NAV_ITEMS = [
   { label: "Início", icon: "🏠", route: "/(app)/inicio", key: "inicio" },
   { label: "Anamnese", icon: "🧾", route: "/(app)/anamnese", key: "anamnese" },
-  {
-    label: "Consultas",
-    icon: "📅",
-    route: "/(app)/consultas",
-    key: "consultas",
-  },
-  {
-    label: "Protocolos",
-    icon: "📊",
-    route: "/(app)/protocolos",
-    key: "protocolos",
-  },
+  { label: "Consultas", icon: "📅", route: "/(app)/consultas", key: "consultas" },
+  { label: "Protocolos", icon: "📊", route: "/(app)/protocolos", key: "protocolos" },
   { label: "Perfil", icon: "👤", route: "/(app)/perfil", key: "perfil" },
 ] as const;
+
+const NAV_ITEM_RECEBIMENTOS = {
+  label: "Recebimentos",
+  icon: "💳",
+  route: "/(app)/pagamentos",
+  key: "pagamentos",
+} as const;
 
 type SidebarProps = {
   onClose?: () => void;
@@ -66,7 +63,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
 
       {/* Nav */}
       <View style={styles.nav}>
-        {NAV_ITEMS.map((item) => {
+        {[...NAV_ITEMS, ...(isMedico ? [NAV_ITEM_RECEBIMENTOS] : [])].map((item) => {
           const active = isActive(item.key);
           return (
             <Pressable

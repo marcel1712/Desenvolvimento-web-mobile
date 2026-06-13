@@ -707,7 +707,7 @@ const styles = StyleSheet.create({
   searchRow: {
     flexDirection: "row",
     gap: 8,
-    alignItems: "center",
+    alignItems: "stretch",
     marginBottom: 12,
   },
 
@@ -828,14 +828,20 @@ const styles = StyleSheet.create({
 
   addProtocolBtn: {
     backgroundColor: "#19c10f",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#19c10f",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
 
   addProtocolBtnText: {
     color: "#fff",
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "700",
   },
 

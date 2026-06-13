@@ -4,7 +4,7 @@ import { alias } from "drizzle-orm/pg-core";
 import { and, eq, sql, ne } from "drizzle-orm";
 import multer from "multer";
 import { db } from "../db";
-import { consultas, disponibilidadeMedicos, documentosConsulta, usuarios } from "../db/schema";
+import { consultas, disponibilidadeMedicos, documentosConsulta, pagamentos, usuarios } from "../db/schema";
 import { authenticate } from "../middlewares/auth";
 import { validate } from "../middlewares/validate";
 import type { AuthRequest } from "../middlewares/auth";
@@ -363,6 +363,94 @@ router.post(
     });
   }
 );
+
+router.patch("/:id/concluir", async (req: AuthRequest, res: Response) => {
+  const { id: userId, tipo } = req.user!;
+
+  if (tipo !== "medico") {
+    res.status(403).json({ message: "Apenas médicos podem concluir consultas." });
+    return;
+  }
+
+  const consultaId = Number(req.params.id);
+
+  const [consulta] = await db
+    .select({ id: consultas.id, medicoId: consultas.medicoId, status: consultas.status })
+    .from(consultas)
+    .where(eq(consultas.id, consultaId));
+
+  if (!consulta) {
+    res.status(404).json({ message: "Consulta não encontrada." });
+    return;
+  }
+
+  if (consulta.medicoId !== userId) {
+    res.status(403).json({ message: "Acesso negado." });
+    return;
+  }
+
+  if (consulta.status !== "agendada") {
+    res.status(422).json({ message: "Apenas consultas agendadas podem ser concluídas." });
+    return;
+  }
+
+  const [updated] = await db
+    .update(consultas)
+    .set({ status: "concluida" })
+    .where(eq(consultas.id, consultaId))
+    .returning();
+
+  res.json(updated);
+});
+
+router.patch("/:id/cancelar", async (req: AuthRequest, res: Response) => {
+  const { id: userId, tipo } = req.user!;
+
+  if (tipo !== "paciente") {
+    res.status(403).json({ message: "Apenas pacientes podem cancelar consultas." });
+    return;
+  }
+
+  const consultaId = Number(req.params.id);
+
+  const [consulta] = await db
+    .select({ id: consultas.id, pacienteId: consultas.pacienteId, status: consultas.status })
+    .from(consultas)
+    .where(eq(consultas.id, consultaId));
+
+  if (!consulta) {
+    res.status(404).json({ message: "Consulta não encontrada." });
+    return;
+  }
+
+  if (consulta.pacienteId !== userId) {
+    res.status(403).json({ message: "Acesso negado." });
+    return;
+  }
+
+  if (consulta.status !== "agendada") {
+    res.status(422).json({ message: "Apenas consultas agendadas podem ser canceladas." });
+    return;
+  }
+
+  const [updated] = await db
+    .update(consultas)
+    .set({ status: "cancelada", statusPagamento: "cancelado" })
+    .where(eq(consultas.id, consultaId))
+    .returning();
+
+  await db
+    .update(pagamentos)
+    .set({ status: "cancelado" })
+    .where(
+      and(
+        eq(pagamentos.consultaId, consultaId),
+        eq(pagamentos.status, "pendente")
+      )
+    );
+
+  res.json(updated);
+});
 
 router.get("/:id/link", async (req: AuthRequest, res: Response) => {
   const id = Number(req.params.id);

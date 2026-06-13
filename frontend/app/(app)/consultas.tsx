@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Linking,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -14,9 +15,91 @@ import {
 import { useRouter } from "expo-router";
 import { useAuth } from "../../hooks/auth/useAuth";
 import { useConsultas } from "../../hooks/useConsultas";
+import { useMetasPaciente } from "../../hooks/useMetasPaciente";
 import { useModal } from "../../hooks/useModal";
+import { useToast } from "../../hooks/useToast";
 import { useUserProfile } from "../../hooks/useUserProfile";
 import { API_URL } from "../../lib/api";
+
+function MetasModal({
+  pacienteId,
+  pacienteNome,
+  onClose,
+}: {
+  pacienteId: number | null;
+  pacienteNome: string;
+  onClose: () => void;
+}) {
+  const { metas, isLoading } = useMetasPaciente(pacienteId);
+
+  const pendentes = metas.filter((m) => !m.concluida);
+  const concluidas = metas.filter((m) => m.concluida);
+
+  return (
+    <Modal
+      visible={pacienteId !== null}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <View style={styles.confirmOverlay}>
+        <View style={[styles.confirmBox, { maxHeight: "80%" }]}>
+          <Text style={styles.confirmTitle}>Metas de {pacienteNome}</Text>
+
+          {isLoading ? (
+            <ActivityIndicator size="small" color="#19c10f" style={{ marginVertical: 24 }} />
+          ) : metas.length === 0 ? (
+            <Text style={styles.metasEmpty}>Nenhuma meta cadastrada.</Text>
+          ) : (
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 400 }}>
+              {pendentes.map((meta) => (
+                <View key={meta.id} style={styles.metaRow}>
+                  <View style={styles.metaCircle} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.metaTitulo}>{meta.titulo}</Text>
+                    {meta.descricao ? (
+                      <Text style={styles.metaDescricao}>{meta.descricao}</Text>
+                    ) : null}
+                  </View>
+                </View>
+              ))}
+
+              {concluidas.length > 0 && (
+                <>
+                  <Text style={styles.metasSectionLabel}>Concluídas</Text>
+                  {concluidas.map((meta) => (
+                    <View key={meta.id} style={styles.metaRow}>
+                      <View style={[styles.metaCircle, styles.metaCircleDone]}>
+                        <Text style={styles.metaCheckmark}>✓</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.metaTitulo, styles.metaTituloDone]}>
+                          {meta.titulo}
+                        </Text>
+                        {meta.descricao ? (
+                          <Text style={styles.metaDescricao}>{meta.descricao}</Text>
+                        ) : null}
+                      </View>
+                    </View>
+                  ))}
+                </>
+              )}
+            </ScrollView>
+          )}
+
+          <View style={[styles.confirmActions, { marginTop: 16 }]}>
+            <Pressable
+              style={({ pressed }) => [styles.confirmBtnSecondary, pressed && { opacity: 0.75 }]}
+              onPress={onClose}
+            >
+              <Text style={styles.confirmBtnSecondaryText}>Fechar</Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { bg: string; text: string }> = {
@@ -58,8 +141,12 @@ function capitalize(s: string) {
 export default function Consultas() {
   const [searchText, setSearchText] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
+  const [cancelandoId, setCancelandoId] = useState<number | null>(null);
+  const [metasPacienteId, setMetasPacienteId] = useState<number | null>(null);
+  const [metasPacienteNome, setMetasPacienteNome] = useState<string>("");
   const { setOpenModal } = useModal();
-  const { consultas, isLoading, error } = useConsultas();
+  const { consultas, isLoading, error, concluir, cancelar } = useConsultas();
+  const { showToast } = useToast();
   const { usuario, token } = useAuth();
   const { profile } = useUserProfile();
   const router = useRouter();
@@ -78,6 +165,18 @@ export default function Consultas() {
       window.location.href = url;
     } else {
       Linking.openURL(url);
+    }
+  }
+
+  async function confirmarCancelamento() {
+    if (cancelandoId === null) return;
+    const id = cancelandoId;
+    setCancelandoId(null);
+    try {
+      await cancelar(id);
+      showToast("success", "Consulta cancelada.");
+    } catch {
+      showToast("error", "Erro ao cancelar consulta. Tente novamente.");
     }
   }
 
@@ -110,9 +209,11 @@ export default function Consultas() {
   }
 
   return (
+    <View style={{ flex: 1 }}>
     <ScrollView
       style={[styles.container, isNarrow && styles.containerNarrow]}
       showsVerticalScrollIndicator={false}
+      contentContainerStyle={isNarrow && !isMedico ? { paddingBottom: 88 } : undefined}
     >
       {/* Título + contexto do papel */}
       <View style={styles.titleRow}>
@@ -137,18 +238,12 @@ export default function Consultas() {
           onBlur={() => setSearchFocused(false)}
         />
 
-        {!isMedico && (
+        {!isMedico && !isNarrow && (
           <Pressable
-            style={({ pressed }) => [
-              styles.button,
-              isVeryNarrow && styles.buttonIcon,
-              pressed && { opacity: 0.85 },
-            ]}
+            style={({ pressed }) => [styles.button, pressed && { opacity: 0.85 }]}
             onPress={() => setOpenModal(true)}
           >
-            <Text style={styles.buttonText}>
-              {isVeryNarrow ? "＋" : "＋ Agendar"}
-            </Text>
+            <Text style={styles.buttonText}>＋ Agendar</Text>
           </Pressable>
         )}
       </View>
@@ -201,10 +296,11 @@ export default function Consultas() {
                 <View style={isNarrow ? styles.infoItemFull : styles.infoItem}>
                   <Text style={styles.infoLabel}>Data / Horário</Text>
                   <Text style={styles.infoValue}>
-                    {new Date(consulta.dataHora).toLocaleDateString("pt-BR")} •{" "}
+                    {new Date(consulta.dataHora).toLocaleDateString("pt-BR", { timeZone: "UTC" })} •{" "}
                     {new Date(consulta.dataHora).toLocaleTimeString("pt-BR", {
                       hour: "2-digit",
                       minute: "2-digit",
+                      timeZone: "UTC",
                     })}
                   </Text>
                 </View>
@@ -229,6 +325,18 @@ export default function Consultas() {
                   <Text style={styles.docBtnText}>📄 Ver documentos</Text>
                 </Pressable>
 
+                {isMedico && consulta.paciente?.id != null && (
+                  <Pressable
+                    style={({ pressed }) => [styles.docBtn, pressed && { opacity: 0.75 }]}
+                    onPress={() => {
+                      setMetasPacienteId(consulta.paciente!.id);
+                      setMetasPacienteNome(consulta.paciente?.nome ?? "paciente");
+                    }}
+                  >
+                    <Text style={styles.docBtnText}>🎯 Ver metas</Text>
+                  </Pressable>
+                )}
+
                 {consulta.tipo === "teleconsulta" && (
                   isMedico && !profile?.googleConectado ? (
                     <Pressable
@@ -252,12 +360,78 @@ export default function Consultas() {
                     </View>
                   )
                 )}
+
+                {isMedico && consulta.status === "agendada" && (
+                  <Pressable
+                    style={({ pressed }) => [styles.concludeBtn, pressed && { opacity: 0.75 }]}
+                    onPress={async () => {
+                      try {
+                        await concluir(consulta.id);
+                        showToast("success", "Consulta concluída.");
+                      } catch {
+                        showToast("error", "Erro ao concluir consulta.");
+                      }
+                    }}
+                  >
+                    <Text style={styles.concludeBtnText}>Concluir</Text>
+                  </Pressable>
+                )}
+
+                {!isMedico && consulta.status === "agendada" && (
+                  <Pressable
+                    style={({ pressed }) => [styles.cancelBtn, pressed && { opacity: 0.75 }]}
+                    onPress={() => setCancelandoId(consulta.id)}
+                  >
+                    <Text style={styles.cancelBtnText}>Cancelar</Text>
+                  </Pressable>
+                )}
               </View>
             </View>
           );
         })
       )}
     </ScrollView>
+
+    {!isMedico && isNarrow && (
+      <Pressable
+        style={({ pressed }) => [styles.fab, pressed && { opacity: 0.85 }]}
+        onPress={() => setOpenModal(true)}
+      >
+        <Text style={styles.fabText}>＋ Agendar</Text>
+      </Pressable>
+    )}
+
+    <MetasModal
+      pacienteId={metasPacienteId}
+      pacienteNome={metasPacienteNome}
+      onClose={() => setMetasPacienteId(null)}
+    />
+
+    <Modal visible={cancelandoId !== null} transparent animationType="fade" onRequestClose={() => setCancelandoId(null)}>
+      <View style={styles.confirmOverlay}>
+        <View style={styles.confirmBox}>
+          <Text style={styles.confirmTitle}>Cancelar consulta</Text>
+          <Text style={styles.confirmMessage}>
+            Tem certeza que deseja cancelar esta consulta? Esta ação não pode ser desfeita.
+          </Text>
+          <View style={styles.confirmActions}>
+            <Pressable
+              style={({ pressed }) => [styles.confirmBtnSecondary, pressed && { opacity: 0.75 }]}
+              onPress={() => setCancelandoId(null)}
+            >
+              <Text style={styles.confirmBtnSecondaryText}>Voltar</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.confirmBtnDanger, pressed && { opacity: 0.75 }]}
+              onPress={confirmarCancelamento}
+            >
+              <Text style={styles.confirmBtnDangerText}>Cancelar consulta</Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
+    </View>
   );
 }
 
@@ -362,14 +536,31 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
 
-  buttonIcon: {
-    paddingHorizontal: 14,
-  },
-
   buttonText: {
     color: "#fff",
     fontWeight: "700",
     fontSize: 14,
+  },
+
+  fab: {
+    position: "absolute",
+    bottom: 28,
+    left: 20,
+    backgroundColor: "#19c10f",
+    paddingHorizontal: 22,
+    paddingVertical: 15,
+    borderRadius: 50,
+    shadowColor: "#19c10f",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+
+  fabText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 15,
   },
 
   emptyCard: {
@@ -545,5 +736,166 @@ const styles = StyleSheet.create({
     color: "#ef4444",
     fontSize: 16,
     textAlign: "center",
+  },
+
+  confirmOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+
+  confirmBox: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 24,
+    width: "100%",
+    maxWidth: 400,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+
+  confirmTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#0f172a",
+    marginBottom: 10,
+  },
+
+  confirmMessage: {
+    fontSize: 14,
+    color: "#475569",
+    lineHeight: 21,
+    marginBottom: 24,
+  },
+
+  confirmActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 10,
+  },
+
+  confirmBtnSecondary: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: "#e2e8f0",
+  },
+
+  confirmBtnSecondaryText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#64748b",
+  },
+
+  confirmBtnDanger: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    backgroundColor: "#ef4444",
+  },
+
+  confirmBtnDangerText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#fff",
+  },
+
+  concludeBtn: {
+    backgroundColor: "#dcfce7",
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 8,
+    marginLeft: "auto",
+  },
+
+  concludeBtnText: {
+    color: "#15803d",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+
+  cancelBtn: {
+    backgroundColor: "#fee2e2",
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 8,
+    marginLeft: "auto",
+  },
+
+  cancelBtnText: {
+    color: "#b91c1c",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+
+  metasEmpty: {
+    fontSize: 14,
+    color: "#94a3b8",
+    textAlign: "center",
+    marginVertical: 24,
+  },
+
+  metasSectionLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#94a3b8",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
+  },
+
+  metaCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: "#cbd5e1",
+    marginTop: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  metaCircleDone: {
+    backgroundColor: "#19c10f",
+    borderColor: "#19c10f",
+  },
+
+  metaCheckmark: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+
+  metaTitulo: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#0f172a",
+  },
+
+  metaTituloDone: {
+    textDecorationLine: "line-through",
+    color: "#94a3b8",
+  },
+
+  metaDescricao: {
+    fontSize: 12,
+    color: "#64748b",
+    marginTop: 2,
   },
 });

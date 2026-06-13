@@ -66,6 +66,8 @@ export function DisponibilidadePanel({ visible, onClose }: DisponibilidadePanelP
   const [selectedDays, setSelectedDays] = useState<DiaSemana[]>([]);
   const [hour, setHour] = useState(8);
   const [minute, setMinute] = useState(0);
+  const [hourDraft, setHourDraft] = useState<string | null>(null);
+  const [minuteDraft, setMinuteDraft] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -82,21 +84,33 @@ export function DisponibilidadePanel({ visible, onClose }: DisponibilidadePanelP
   };
 
   const adjustHour = (delta: number) => {
+    setHourDraft(null);
     setHour((prev) => (prev + delta + 24) % 24);
   };
 
   const adjustMinute = (delta: number) => {
+    setMinuteDraft(null);
     setMinute((prev) => (prev + delta + 60) % 60);
   };
 
-  const handleHourChange = (text: string) => {
-    const digits = text.replace(/[^0-9]/g, "");
-    setHour(digits === "" ? 0 : clamp(parseInt(digits, 10), 0, 23));
+  const handleHourFocus = () => setHourDraft(String(hour).padStart(2, "0"));
+  const handleHourChange = (text: string) => setHourDraft(text.replace(/[^0-9]/g, ""));
+  const handleHourBlur = () => {
+    if (hourDraft !== null) {
+      const val = parseInt(hourDraft, 10);
+      setHour(isNaN(val) ? 0 : clamp(val, 0, 23));
+      setHourDraft(null);
+    }
   };
 
-  const handleMinuteChange = (text: string) => {
-    const digits = text.replace(/[^0-9]/g, "");
-    setMinute(digits === "" ? 0 : clamp(parseInt(digits, 10), 0, 59));
+  const handleMinuteFocus = () => setMinuteDraft(String(minute).padStart(2, "0"));
+  const handleMinuteChange = (text: string) => setMinuteDraft(text.replace(/[^0-9]/g, ""));
+  const handleMinuteBlur = () => {
+    if (minuteDraft !== null) {
+      const val = parseInt(minuteDraft, 10);
+      setMinute(isNaN(val) ? 0 : clamp(val, 0, 59));
+      setMinuteDraft(null);
+    }
   };
 
   const slotsByDay = DIAS_SEMANA.reduce<Record<DiaSemana, typeof slots>>(
@@ -188,39 +202,43 @@ export function DisponibilidadePanel({ visible, onClose }: DisponibilidadePanelP
             <Text style={styles.fieldLabel}>Horário</Text>
             <View style={styles.timeRow}>
               <View style={styles.timeField}>
-                <Pressable style={styles.stepperBtn} onPress={() => adjustHour(-1)}>
+                <TouchableOpacity style={styles.stepperBtn} onPress={() => adjustHour(-1)} activeOpacity={0.6}>
                   <Text style={styles.stepperBtnText}>−</Text>
-                </Pressable>
+                </TouchableOpacity>
                 <TextInput
                   style={styles.timeInput}
-                  value={String(hour).padStart(2, "0")}
+                  value={hourDraft ?? String(hour).padStart(2, "0")}
+                  onFocus={handleHourFocus}
                   onChangeText={handleHourChange}
+                  onBlur={handleHourBlur}
                   keyboardType="number-pad"
                   maxLength={2}
                   selectTextOnFocus
                 />
-                <Pressable style={styles.stepperBtn} onPress={() => adjustHour(1)}>
+                <TouchableOpacity style={styles.stepperBtn} onPress={() => adjustHour(1)} activeOpacity={0.6}>
                   <Text style={styles.stepperBtnText}>+</Text>
-                </Pressable>
+                </TouchableOpacity>
               </View>
 
               <Text style={styles.timeSeparator}>:</Text>
 
               <View style={styles.timeField}>
-                <Pressable style={styles.stepperBtn} onPress={() => adjustMinute(-5)}>
+                <TouchableOpacity style={styles.stepperBtn} onPress={() => adjustMinute(-5)} activeOpacity={0.6}>
                   <Text style={styles.stepperBtnText}>−</Text>
-                </Pressable>
+                </TouchableOpacity>
                 <TextInput
                   style={styles.timeInput}
-                  value={String(minute).padStart(2, "0")}
+                  value={minuteDraft ?? String(minute).padStart(2, "0")}
+                  onFocus={handleMinuteFocus}
                   onChangeText={handleMinuteChange}
+                  onBlur={handleMinuteBlur}
                   keyboardType="number-pad"
                   maxLength={2}
                   selectTextOnFocus
                 />
-                <Pressable style={styles.stepperBtn} onPress={() => adjustMinute(5)}>
+                <TouchableOpacity style={styles.stepperBtn} onPress={() => adjustMinute(5)} activeOpacity={0.6}>
                   <Text style={styles.stepperBtnText}>+</Text>
-                </Pressable>
+                </TouchableOpacity>
               </View>
             </View>
             <Text style={styles.timeHint}>

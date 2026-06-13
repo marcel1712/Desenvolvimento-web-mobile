@@ -7,6 +7,7 @@ export type Medico = {
   nome: string;
   email: string;
   tipo: "paciente" | "medico";
+  googleConectado: boolean;
 };
 
 export function useMedicos() {

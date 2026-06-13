@@ -13,6 +13,7 @@ import {
 import Sidebar from "../../components/sidebar";
 import { useAuth } from "../../hooks/auth/useAuth";
 import { useAgendarConsulta } from "../../hooks/useAgendarConsulta";
+import { useDatasDisponiveis } from "../../hooks/useDisponibilidade";
 import { useMedicos } from "../../hooks/useMedicos";
 import { useModal } from "../../hooks/useModal";
 import { useToast } from "../../hooks/useToast";
@@ -50,6 +51,8 @@ export default function AppLayout() {
     error: slotsError,
   } = useSlotsLivres(selectedDoctorId, formattedDate);
 
+  const { datas: datasDisponiveis, isLoading: loadingDias } = useDatasDisponiveis(selectedDoctorId);
+
   if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -63,12 +66,20 @@ export default function AppLayout() {
   }
 
   const getNextDays = () => {
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const toUTCDateStr = (d: Date) =>
+      `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+
     const days = [];
-    const today = new Date();
-    for (let i = 1; i <= 14; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      days.push(date);
+    const now = new Date();
+    const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    for (let i = 1; i <= 60; i++) {
+      const date = new Date(todayUTC);
+      date.setUTCDate(todayUTC.getUTCDate() + i);
+      if (datasDisponiveis.size === 0 || datasDisponiveis.has(toUTCDateStr(date))) {
+        days.push(date);
+      }
+      if (days.length === 14) break;
     }
     return days;
   };
@@ -164,7 +175,10 @@ export default function AppLayout() {
                             isNarrow && styles.cardNarrow,
                             selectedDoctorId === medico.id && styles.selectedCard,
                           ]}
-                          onPress={() => setSelectedDoctorId(medico.id)}
+                          onPress={() => {
+                            setSelectedDoctorId(medico.id);
+                            setSelectedType("presencial");
+                          }}
                         >
                           <Text style={styles.cardText}>{medico.nome}</Text>
                         </TouchableOpacity>
@@ -195,6 +209,9 @@ export default function AppLayout() {
 
                   <Text style={styles.sectionLabel}>Selecione a data</Text>
 
+                  {loadingDias ? (
+                    <ActivityIndicator size="small" color="#19c10f" style={{ marginVertical: 12 }} />
+                  ) : (
                   <View style={styles.datesContainer}>
                     {getNextDays().map((date, i) => (
                       <TouchableOpacity
@@ -214,13 +231,16 @@ export default function AppLayout() {
                           ]}
                         >
                           {date.toLocaleDateString("pt-BR", {
+                            weekday: "short",
                             day: "2-digit",
                             month: "short",
+                            timeZone: "UTC",
                           })}
                         </Text>
                       </TouchableOpacity>
                     ))}
                   </View>
+                  )}
 
                   <Text style={styles.sectionLabel}>Horários disponíveis</Text>
 
@@ -284,17 +304,23 @@ export default function AppLayout() {
                       style={[
                         styles.typeButton,
                         selectedType === "teleconsulta" && styles.selectedTypeButton,
+                        !selectedDoctor?.googleConectado && styles.typeButtonDisabled,
                       ]}
-                      onPress={() => setSelectedType("teleconsulta")}
+                      onPress={() => selectedDoctor?.googleConectado && setSelectedType("teleconsulta")}
+                      disabled={!selectedDoctor?.googleConectado}
                     >
                       <Text
                         style={[
                           styles.typeButtonText,
                           selectedType === "teleconsulta" && styles.selectedTypeButtonText,
+                          !selectedDoctor?.googleConectado && styles.typeButtonTextDisabled,
                         ]}
                       >
                         Teleconsulta
                       </Text>
+                      {!selectedDoctor?.googleConectado && (
+                        <Text style={styles.typeButtonHint}>Médico não habilitou</Text>
+                      )}
                     </TouchableOpacity>
                   </View>
 
@@ -506,6 +532,11 @@ const styles = StyleSheet.create({
     borderColor: "#19c10f",
   },
 
+  typeButtonDisabled: {
+    opacity: 0.5,
+    backgroundColor: "#f8fafc",
+  },
+
   typeButtonText: {
     color: "#374151",
     fontWeight: "500",
@@ -515,6 +546,16 @@ const styles = StyleSheet.create({
   selectedTypeButtonText: {
     color: "#15803d",
     fontWeight: "700",
+  },
+
+  typeButtonTextDisabled: {
+    color: "#94a3b8",
+  },
+
+  typeButtonHint: {
+    fontSize: 10,
+    color: "#94a3b8",
+    marginTop: 3,
   },
 
   actions: {

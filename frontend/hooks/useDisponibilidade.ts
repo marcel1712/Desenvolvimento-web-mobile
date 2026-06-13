@@ -32,6 +32,40 @@ interface UseDisponibilidadeReturn {
   removeSlot: (id: number) => Promise<void>;
 }
 
+export function useDatasDisponiveis(medicoId: number | null) {
+  const { token } = useAuth();
+  const [datas, setDatas] = useState<Set<string>>(new Set());
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!medicoId || !token) {
+      setDatas(new Set());
+      return;
+    }
+
+    const today = new Date();
+    const inicio = new Date(today);
+    inicio.setDate(today.getDate() + 1);
+    const fim = new Date(today);
+    fim.setDate(today.getDate() + 60);
+
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const fmt = (d: Date) =>
+      `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+
+    setIsLoading(true);
+    apiFetch<string[]>(
+      `/api/disponibilidade/datas-disponiveis?medicoId=${medicoId}&inicio=${fmt(inicio)}&fim=${fmt(fim)}`,
+      { token }
+    )
+      .then((dates) => setDatas(new Set(dates)))
+      .catch(() => setDatas(new Set()))
+      .finally(() => setIsLoading(false));
+  }, [medicoId, token]);
+
+  return { datas, isLoading };
+}
+
 export function useDisponibilidade(): UseDisponibilidadeReturn {
   const { token } = useAuth();
   const [slots, setSlots] = useState<DisponibilidadeSlot[]>([]);

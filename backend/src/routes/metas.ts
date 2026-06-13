@@ -1,8 +1,8 @@
 import { Router } from "express";
 import type { Response, NextFunction } from "express";
-import { eq, desc } from "drizzle-orm";
+import { and, eq, desc } from "drizzle-orm";
 import { db } from "../db";
-import { metas } from "../db/schema";
+import { consultas, metas } from "../db/schema";
 import { authenticate } from "../middlewares/auth";
 import { validate } from "../middlewares/validate";
 import type { AuthRequest } from "../middlewares/auth";
@@ -20,6 +20,43 @@ function requirePaciente(req: AuthRequest, res: Response, next: NextFunction) {
   }
   next();
 }
+
+router.get("/paciente/:pacienteId", async (req: AuthRequest, res: Response) => {
+  if (req.user?.tipo !== "medico") {
+    res.status(403).json({ message: "Acesso restrito a médicos." });
+    return;
+  }
+
+  const pacienteId = Number(req.params.pacienteId);
+  if (!pacienteId) {
+    res.status(400).json({ message: "pacienteId inválido." });
+    return;
+  }
+
+  const [consultaExistente] = await db
+    .select({ id: consultas.id })
+    .from(consultas)
+    .where(
+      and(
+        eq(consultas.medicoId, req.user!.id),
+        eq(consultas.pacienteId, pacienteId)
+      )
+    )
+    .limit(1);
+
+  if (!consultaExistente) {
+    res.status(403).json({ message: "Sem vínculo com este paciente." });
+    return;
+  }
+
+  const lista = await db
+    .select()
+    .from(metas)
+    .where(eq(metas.pacienteId, pacienteId))
+    .orderBy(desc(metas.criadoEm));
+
+  res.json(lista);
+});
 
 router.use(requirePaciente);
 

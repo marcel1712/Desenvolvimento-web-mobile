@@ -9,6 +9,7 @@ export type Pagamento = {
   descricao: string | null;
   criadoEm: string;
   consulta: { id: number; dataHora: string; tipo: string };
+  paciente: { id: number; nome: string } | null;
 };
 
 export function usePagamentos() {

@@ -1,14 +1,17 @@
 import { Router } from "express";
 import type { Response } from "express";
 import { eq } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { db } from "../db";
-import { pagamentos, consultas } from "../db/schema";
+import { pagamentos, consultas, usuarios } from "../db/schema";
 import { authenticate } from "../middlewares/auth";
 import type { AuthRequest } from "../middlewares/auth";
 
 const router = Router();
 
 router.use(authenticate);
+
+const pacienteAlias = alias(usuarios, "paciente");
 
 router.get("/", async (req: AuthRequest, res: Response) => {
   const { id, tipo } = req.user!;
@@ -30,9 +33,14 @@ router.get("/", async (req: AuthRequest, res: Response) => {
         dataHora: consultas.dataHora,
         tipo: consultas.tipo,
       },
+      paciente: {
+        id: pacienteAlias.id,
+        nome: pacienteAlias.nome,
+      },
     })
     .from(pagamentos)
     .leftJoin(consultas, eq(consultas.id, pagamentos.consultaId))
+    .leftJoin(pacienteAlias, eq(pacienteAlias.id, pagamentos.pacienteId))
     .where(filtro);
 
   res.json(lista);

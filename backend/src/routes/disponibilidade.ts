@@ -1,6 +1,6 @@
 import { Router } from "express";
 import type { Response } from "express";
-import { and, eq } from "drizzle-orm";
+import { and, eq, gte, lte } from "drizzle-orm";
 import { db } from "../db";
 import { disponibilidadeMedicos, consultas } from "../db/schema";
 import { authenticate } from "../middlewares/auth";
@@ -24,6 +24,87 @@ const daysOfWeek = [
   "sexta",
   "sabado",
 ] as const;
+
+router.get("/datas-disponiveis", async (req: AuthRequest, res: Response) => {
+  const medicoId = Number(req.query.medicoId);
+  const inicio = String(req.query.inicio ?? "");
+  const fim = String(req.query.fim ?? "");
+
+  if (!medicoId || isNaN(medicoId) || !inicio || !fim) {
+    res.status(400).json({ message: "Parâmetros inválidos" });
+    return;
+  }
+
+  const configuredSlots = await db
+    .select()
+    .from(disponibilidadeMedicos)
+    .where(eq(disponibilidadeMedicos.medicoId, medicoId));
+
+  if (configuredSlots.length === 0) {
+    res.json([]);
+    return;
+  }
+
+  const slotsByDay: Record<string, string[]> = {};
+  for (const slot of configuredSlots) {
+    if (!slotsByDay[slot.diaSemana]) slotsByDay[slot.diaSemana] = [];
+    slotsByDay[slot.diaSemana]!.push(slot.horarioInicio);
+  }
+
+  const inicioDate = new Date(inicio + "T00:00:00.000Z");
+  const fimDate = new Date(fim + "T23:59:59.999Z");
+
+  const bookedConsultas = await db
+    .select({ dataHora: consultas.dataHora })
+    .from(consultas)
+    .where(
+      and(
+        eq(consultas.medicoId, medicoId),
+        eq(consultas.status, "agendada"),
+        gte(consultas.dataHora, inicioDate),
+        lte(consultas.dataHora, fimDate)
+      )
+    );
+
+  const bookedByDate: Record<string, Set<string>> = {};
+  for (const c of bookedConsultas) {
+    const d = new Date(c.dataHora);
+    const dateStr =
+      d.getUTCFullYear() +
+      "-" +
+      String(d.getUTCMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(d.getUTCDate()).padStart(2, "0");
+    if (!bookedByDate[dateStr]) bookedByDate[dateStr] = new Set();
+    bookedByDate[dateStr]!.add(
+      String(d.getUTCHours()).padStart(2, "0") +
+        ":" +
+        String(d.getUTCMinutes()).padStart(2, "0")
+    );
+  }
+
+  const availableDates: string[] = [];
+  const cursor = new Date(inicioDate);
+  while (cursor <= fimDate) {
+    const diaSemana = daysOfWeek[cursor.getUTCDay()]!;
+    const configured = slotsByDay[diaSemana];
+    if (configured && configured.length > 0) {
+      const dateStr =
+        cursor.getUTCFullYear() +
+        "-" +
+        String(cursor.getUTCMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(cursor.getUTCDate()).padStart(2, "0");
+      const booked = bookedByDate[dateStr] ?? new Set<string>();
+      if (configured.some((t) => !booked.has(t))) {
+        availableDates.push(dateStr);
+      }
+    }
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+
+  res.json(availableDates);
+});
 
 router.get("/slots-livres", async (req: AuthRequest, res: Response) => {
   const queryResult = slotsLivresQuerySchema.safeParse(req.query);

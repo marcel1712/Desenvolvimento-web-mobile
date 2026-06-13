@@ -21,7 +21,7 @@ import { useAuth } from "../../hooks/auth/useAuth";
 import { DisponibilidadePanel } from "../../components/DisponibilidadePanel";
 import { API_URL } from "../../lib/api";
 
-type Tab = "dados" | "historico" | "metas";
+type Tab = "dados" | "metas";
 
 function getInitials(name: string) {
   return name
@@ -47,9 +47,6 @@ export default function Perfil() {
   });
   const [editError, setEditError] = useState<string | null>(null);
   const [disponibilidadePanelOpen, setDisponibilidadePanelOpen] = useState(false);
-
-  const [newGoalOpen, setNewGoalOpen] = useState(false);
-  const [goalFields, setGoalFields] = useState({ titulo: "", descricao: "" });
 
   useEffect(() => {
     if (Platform.OS !== "web" || typeof window === "undefined") return;
@@ -97,13 +94,12 @@ export default function Perfil() {
 
   const ALL_TABS: { key: Tab; label: string }[] = [
     { key: "dados", label: "Dados pessoais" },
-    { key: "historico", label: "Histórico de saúde" },
     { key: "metas", label: "Metas" },
   ];
 
   const TABS =
     profile.tipo === "medico"
-      ? ALL_TABS.filter((t) => t.key !== "metas" && t.key !== "historico")
+      ? ALL_TABS.filter((t) => t.key !== "metas")
       : ALL_TABS;
 
   function openEditModal() {
@@ -247,20 +243,10 @@ export default function Perfil() {
                 </View>
               ) : (
                 <TouchableOpacity style={styles.googleButton} onPress={handleConnectGoogle}>
-                  <Text style={styles.googleButtonText}>Conectar Google</Text>
+                  <Text style={styles.googleButtonText}>Conectar conta Google e ativar teleconsultas</Text>
                 </TouchableOpacity>
               )
             )}
-          </View>
-        )}
-
-        {tab === "historico" && (
-          <View style={styles.emptyTab}>
-            <Text style={styles.emptyEmoji}>🏥</Text>
-            <Text style={styles.emptyTitle}>Em breve</Text>
-            <Text style={styles.emptySubtitle}>
-              O histórico de saúde estará disponível em breve.
-            </Text>
           </View>
         )}
 

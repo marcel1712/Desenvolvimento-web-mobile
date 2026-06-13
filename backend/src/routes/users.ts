@@ -12,15 +12,21 @@ import type { UpdateMeBody } from "../schemas/user.schema";
 const router = Router();
 
 router.get("/medicos", authenticate, async (req: AuthRequest, res: Response) => {
-  const medicos = await db
+  const rows = await db
     .select({
       id: usuarios.id,
       nome: usuarios.nome,
       email: usuarios.email,
       tipo: usuarios.tipo,
+      googleRefreshToken: usuarios.googleRefreshToken,
     })
     .from(usuarios)
     .where(eq(usuarios.tipo, "medico"));
+
+  const medicos = rows.map(({ googleRefreshToken, ...m }) => ({
+    ...m,
+    googleConectado: !!googleRefreshToken,
+  }));
 
   res.json(medicos);
 });
