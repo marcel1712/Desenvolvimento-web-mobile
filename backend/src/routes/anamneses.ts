@@ -62,4 +62,113 @@ router.get("/", async (req: AuthRequest, res: Response) => {
   res.json(lista);
 });
 
+router.post("/", async (req: AuthRequest, res: Response) => {
+  const { id, tipo } = req.user!;
+
+  if (tipo !== "paciente") {
+    res.status(403).json({ message: "Apenas pacientes podem criar anamneses" });
+    return;
+  }
+
+  const [existing] = await db
+    .select({ id: anamneses.id })
+    .from(anamneses)
+    .where(eq(anamneses.pacienteId, id));
+
+  if (existing) {
+    res.status(409).json({ message: "Anamnese já existe. Use PUT para atualizar." });
+    return;
+  }
+
+  const {
+    idade,
+    peso,
+    altura,
+    bmi,
+    condicoesSaude,
+    alergias,
+    horasSono,
+    nivelAtividade,
+    tipoAlimentacao,
+    habitos,
+    objetivo,
+  } = req.body;
+
+  const [created] = await db
+    .insert(anamneses)
+    .values({
+      pacienteId: id,
+      idade: idade != null ? Number(idade) : null,
+      peso: peso || null,
+      altura: altura || null,
+      bmi: bmi || null,
+      condicoesSaude: condicoesSaude ?? null,
+      alergias: alergias || null,
+      horasSono: horasSono || null,
+      nivelAtividade: nivelAtividade ?? null,
+      tipoAlimentacao: tipoAlimentacao ?? null,
+      habitos: habitos ?? null,
+      objetivo: objetivo || null,
+    })
+    .returning();
+
+  res.status(201).json(created);
+});
+
+router.put("/:id", async (req: AuthRequest, res: Response) => {
+  const { id: userId, tipo } = req.user!;
+
+  if (tipo !== "paciente") {
+    res.status(403).json({ message: "Apenas pacientes podem atualizar anamneses" });
+    return;
+  }
+
+  const anamneseId = Number(req.params.id);
+
+  const [existing] = await db
+    .select({ id: anamneses.id, pacienteId: anamneses.pacienteId })
+    .from(anamneses)
+    .where(eq(anamneses.id, anamneseId));
+
+  if (!existing || existing.pacienteId !== userId) {
+    res.status(404).json({ message: "Anamnese não encontrada" });
+    return;
+  }
+
+  const {
+    idade,
+    peso,
+    altura,
+    bmi,
+    condicoesSaude,
+    alergias,
+    horasSono,
+    nivelAtividade,
+    tipoAlimentacao,
+    habitos,
+    objetivo,
+  } = req.body;
+
+  const [updated] = await db
+    .update(anamneses)
+    .set({
+      idade: idade != null ? Number(idade) : null,
+      peso: peso || null,
+      altura: altura || null,
+      bmi: bmi || null,
+      condicoesSaude: condicoesSaude ?? null,
+      alergias: alergias || null,
+      horasSono: horasSono || null,
+      nivelAtividade: nivelAtividade ?? null,
+      tipoAlimentacao: tipoAlimentacao ?? null,
+      habitos: habitos ?? null,
+      objetivo: objetivo || null,
+      atualizadoEm: new Date(),
+    })
+    .where(eq(anamneses.id, anamneseId))
+    .returning();
+
+  res.json(updated);
+});
+
 export default router;

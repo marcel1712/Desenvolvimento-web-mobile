@@ -1,4 +1,4 @@
-import { Stack } from "expo-router";
+import { Redirect, Stack } from "expo-router";
 import { useState, useMemo } from "react";
 import {
   ActivityIndicator,
@@ -58,9 +58,9 @@ export default function AppLayout() {
     );
   }
 
-  // if (!token) {
-  //   return <Redirect href="/login" />;
-  // }
+  if (!token) {
+    return <Redirect href="/login" />;
+  }
 
   const getNextDays = () => {
     const days = [];

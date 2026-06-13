@@ -63,17 +63,6 @@ export const anamneses = pgTable("anamneses", {
   atualizadoEm: timestamp("atualizado_em").defaultNow().notNull(),
 });
 
-export const arquivosAnamnese = pgTable("arquivos_anamnese", {
-  id: serial("id").primaryKey(),
-  anamneseId: integer("anamnese_id")
-    .references(() => anamneses.id)
-    .notNull(),
-  nomeArquivo: varchar("nome_arquivo", { length: 255 }).notNull(),
-  url: text("url").notNull(),
-  tipoMime: varchar("tipo_mime", { length: 100 }),
-  criadoEm: timestamp("criado_em").defaultNow().notNull(),
-});
-
 export const consultas = pgTable("consultas", {
   id: serial("id").primaryKey(),
   pacienteId: integer("paciente_id")

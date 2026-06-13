@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -9,8 +9,9 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../../hooks/auth/useAuth";
-import { useAnamneses } from "../../hooks/useAnamneses";
+import { useAnamneses, usePacienteAnamnese } from "../../hooks/useAnamneses";
 import type { AnamneseMedico } from "../../hooks/useAnamneses";
+import { useToast } from "../../hooks/useToast";
 
 // ─── Medico view ────────────────────────────────────────────────────────────
 
@@ -208,6 +209,20 @@ const HABITOS_OPCOES = [
   "Bebo socialmente",
 ];
 
+const DISPLAY_TO_NIVEL: Record<string, "sedentario" | "leve" | "moderado" | "intenso"> = {
+  "Sedentário": "sedentario",
+  "Leve": "leve",
+  "Moderado": "moderado",
+  "Intenso": "intenso",
+};
+
+const NIVEL_TO_DISPLAY: Record<string, string> = {
+  sedentario: "Sedentário",
+  leve: "Leve",
+  moderado: "Moderado",
+  intenso: "Intenso",
+};
+
 function CheckGroup({
   opcoes,
   selected,
@@ -265,6 +280,9 @@ const check = StyleSheet.create({
 });
 
 function PacienteAnamnese() {
+  const { anamnese, isLoading, isSaving, salvar } = usePacienteAnamnese();
+  const { showToast } = useToast();
+
   const [idade, setIdade] = useState("");
   const [peso, setPeso] = useState("");
   const [altura, setAltura] = useState("");
@@ -281,6 +299,26 @@ function PacienteAnamnese() {
   const [alimentacao, setAlimentacao] = useState<string[]>([]);
   const [habitos, setHabitos] = useState<string[]>([]);
 
+  useEffect(() => {
+    if (!anamnese) return;
+    setIdade(anamnese.idade != null ? String(anamnese.idade) : "");
+    setPeso(anamnese.peso ?? "");
+    setAltura(anamnese.altura ?? "");
+    setObjetivo(anamnese.objetivo ?? "");
+    setAlergias(anamnese.alergias ?? "");
+    setSono(anamnese.horasSono ?? "");
+    const conhecidas = anamnese.condicoesSaude?.filter((c) => HISTORICO_OPCOES.includes(c)) ?? [];
+    const extra = anamnese.condicoesSaude?.filter((c) => !HISTORICO_OPCOES.includes(c)) ?? [];
+    setHistorico(conhecidas);
+    setOutro(extra.join(", "));
+    if (anamnese.nivelAtividade) {
+      const display = NIVEL_TO_DISPLAY[anamnese.nivelAtividade];
+      setAtividade(display ? [display] : []);
+    }
+    setAlimentacao(anamnese.tipoAlimentacao ?? []);
+    setHabitos(anamnese.habitos ?? []);
+  }, [anamnese]);
+
   function toggle(setter: React.Dispatch<React.SetStateAction<string[]>>) {
     return (item: string) =>
       setter((prev) =>
@@ -292,6 +330,46 @@ function PacienteAnamnese() {
     peso && altura
       ? (parseFloat(peso) / Math.pow(parseFloat(altura) / 100, 2)).toFixed(1)
       : "";
+
+  async function handleSubmit() {
+    const condicoesSaude = [
+      ...historico,
+      ...(outro.trim() ? [outro.trim()] : []),
+    ];
+    const nivelAtividade = atividade[0] ? (DISPLAY_TO_NIVEL[atividade[0]] ?? null) : null;
+    const horasSono = sono.replace(/[^0-9.]/g, "") || null;
+    const bmiCalc =
+      peso && altura
+        ? (parseFloat(peso) / Math.pow(parseFloat(altura) / 100, 2)).toFixed(2)
+        : null;
+
+    try {
+      await salvar({
+        idade: idade ? parseInt(idade, 10) : null,
+        peso: peso || null,
+        altura: altura || null,
+        bmi: bmiCalc,
+        condicoesSaude: condicoesSaude.length ? condicoesSaude : null,
+        alergias: alergias || null,
+        horasSono,
+        nivelAtividade,
+        tipoAlimentacao: alimentacao.length ? alimentacao : null,
+        habitos: habitos.length ? habitos : null,
+        objetivo: objetivo || null,
+      });
+      showToast("success", "Anamnese salva com sucesso!");
+    } catch {
+      showToast("error", "Erro ao salvar anamnese. Tente novamente.");
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#19c10f" />
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -386,8 +464,9 @@ function PacienteAnamnese() {
           style={styles.input}
           value={sono}
           onChangeText={setSono}
-          placeholder="Ex: 8h"
+          placeholder="Ex: 8"
           placeholderTextColor="#94a3b8"
+          keyboardType="decimal-pad"
         />
         <Text style={[styles.label, { marginTop: 16 }]}>Nível de atividade física</Text>
         <CheckGroup opcoes={ATIVIDADE_OPCOES} selected={atividade} onToggle={toggle(setAtividade)} />
@@ -410,8 +489,18 @@ function PacienteAnamnese() {
         />
       </View>
 
-      <Pressable style={({ pressed }) => [styles.button, pressed && { opacity: 0.85 }]}>
-        <Text style={styles.buttonText}>Enviar Anamnese</Text>
+      <Pressable
+        style={({ pressed }) => [styles.button, (pressed || isSaving) && { opacity: 0.85 }]}
+        onPress={handleSubmit}
+        disabled={isSaving}
+      >
+        {isSaving ? (
+          <ActivityIndicator color="#fff" size="small" />
+        ) : (
+          <Text style={styles.buttonText}>
+            {anamnese ? "Atualizar Anamnese" : "Enviar Anamnese"}
+          </Text>
+        )}
       </Pressable>
     </ScrollView>
   );

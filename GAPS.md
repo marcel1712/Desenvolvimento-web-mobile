@@ -6,7 +6,7 @@
 
 - Formulário completo existe no frontend com campos de peso, altura, histórico, alergias, nível de atividade, hábitos, objetivo e upload de arquivos
 - Botão "Enviar Anamnese" não tem `onPress` handler
-- Tabela `anamneses` e `arquivos_anamnese` existem no banco
+- Tabela `anamneses` existe no banco
 - Nenhum endpoint de anamnese existe no backend
 
 **O que falta:**
