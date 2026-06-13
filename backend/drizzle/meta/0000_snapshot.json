@@ -1,5 +1,5 @@
 {
-  "id": "9a07a94f-a6ca-4fb6-bd5e-0f36f5a1c634",
+  "id": "60be7c8b-21ad-414d-a095-d4c822e4e88b",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -110,70 +110,6 @@
           "tableTo": "usuarios",
           "columnsFrom": [
             "paciente_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.arquivos_anamnese": {
-      "name": "arquivos_anamnese",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "anamnese_id": {
-          "name": "anamnese_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "nome_arquivo": {
-          "name": "nome_arquivo",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "url": {
-          "name": "url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "tipo_mime": {
-          "name": "tipo_mime",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "criado_em": {
-          "name": "criado_em",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "arquivos_anamnese_anamnese_id_anamneses_id_fk": {
-          "name": "arquivos_anamnese_anamnese_id_anamneses_id_fk",
-          "tableFrom": "arquivos_anamnese",
-          "tableTo": "anamneses",
-          "columnsFrom": [
-            "anamnese_id"
           ],
           "columnsTo": [
             "id"
