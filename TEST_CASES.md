@@ -94,51 +94,51 @@ Estado atual (medido em 2026-06-18):
 
 ### A implementar
 
-**GET /api/consultas — filtro por usuário**
+**GET /api/consultas — filtro por usuário** - COMPLETADO
 - [ ] Dado um paciente autenticado, deve retornar apenas as consultas onde ele é o paciente
 - [ ] Dado um médico autenticado, deve retornar apenas as consultas onde ele é o médico
 
-**GET /api/consultas/pacientes**
+**GET /api/consultas/pacientes** - COMPLETADO
 - [ ] Dado um usuário com `tipo: "paciente"`, deve retornar 403
 - [ ] Dado um médico autenticado, deve retornar a lista de pacientes distintos que já consultaram com ele
 
-**GET /api/consultas/:id**
+**GET /api/consultas/:id** - COMPLETADO
 - [ ] Dado um ID inexistente, deve retornar 404
 - [ ] Dado um usuário que não é nem paciente nem médico da consulta, deve retornar 403
 - [ ] Dado o paciente dono da consulta, deve retornar 200 com os dados
 - [ ] Dado o médico dono da consulta, deve retornar 200 com os dados
 
-**GET /api/consultas/:id/documentos — controle de acesso**
+**GET /api/consultas/:id/documentos — controle de acesso** - COMPLETADO
 - [ ] Dado um usuário que não participa da consulta, deve retornar 403
 
-**PATCH /api/consultas/:id/concluir**
+**PATCH /api/consultas/:id/concluir** - COMPLETADO
 - [ ] Dado um usuário com `tipo: "paciente"`, deve retornar 403
 - [ ] Dado um ID de consulta inexistente, deve retornar 404
 - [ ] Dado um médico que não é o responsável pela consulta, deve retornar 403
 - [ ] Dado uma consulta com status diferente de `"agendada"`, deve retornar 422
 - [ ] Dado uma consulta `"agendada"` do próprio médico, deve retornar 200 com status `"concluida"`
 
-**PATCH /api/consultas/:id/cancelar**
+**PATCH /api/consultas/:id/cancelar** - COMPLETADO
 - [ ] Dado um usuário com `tipo: "medico"`, deve retornar 403
 - [ ] Dado um ID de consulta inexistente, deve retornar 404
 - [ ] Dado um paciente que não é o dono da consulta, deve retornar 403
 - [ ] Dado uma consulta com status diferente de `"agendada"`, deve retornar 422
 - [ ] Dado uma consulta `"agendada"` do próprio paciente, deve retornar 200 com status `"cancelada"`
 
-**GET /api/consultas/:id/link**
+**GET /api/consultas/:id/link** - COMPLETADO
 - [ ] Dado um ID de consulta inexistente, deve retornar 404
 - [ ] Dado um usuário que não participa da consulta, deve retornar 403
 - [ ] Dado uma consulta sem `linkMeet`, deve retornar 404 com mensagem de link indisponível
 - [ ] Dado uma consulta com `linkMeet` preenchido, deve retornar 200 com o link
 
-**GET /api/disponibilidade/datas-disponiveis**
+**GET /api/disponibilidade/datas-disponiveis** - COMPLETADO
 - [ ] Dado ausência de `medicoId`, `inicio` ou `fim`, deve retornar 400
 - [ ] Dado um médico sem slots configurados, deve retornar array vazio
 - [ ] Dado slots configurados, deve retornar as datas com pelo menos um slot livre no intervalo
 - [ ] Dado todas as datas do intervalo completamente reservadas, deve retornar array vazio
 - [ ] Dado datas fora do intervalo solicitado, não devem aparecer no resultado
 
-**Google Meet (`services/googleMeet.ts`)**
+**Google Meet (`services/googleMeet.ts`)** - COMPLETADO
 - [ ] Dado um `state` válido, `getGoogleAuthUrl` deve retornar uma URL de autenticação contendo o scope
 - [ ] Dado um código de autorização válido, `getRefreshTokenFromCode` deve retornar o refresh token
 - [ ] Dado uma resposta do Google sem `refresh_token`, `getRefreshTokenFromCode` deve lançar erro
@@ -265,3 +265,6 @@ Estado atual (medido em 2026-06-18):
 - [ ] Dado `token` nulo, deve retornar `Set` vazio sem fazer requisição
 - [ ] Dado `medicoId` nulo, deve retornar `Set` vazio sem fazer requisição
 - [ ] Dado falha na API, deve retornar `Set` vazio
+
+
+CASOS DE TESTE PARA SENHA
