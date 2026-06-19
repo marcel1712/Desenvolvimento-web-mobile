@@ -68,6 +68,15 @@ function makeUpdateConcluirChain(result: unknown[]) {
   mockUpdate.mockReturnValueOnce({ set: jest.fn().mockReturnValue({ where: whereFn }) });
 }
 
+function makeUpdateCancelarChain(result: unknown[]) {
+  const returningFn = jest.fn().mockResolvedValue(result);
+  const firstWhere = jest.fn().mockReturnValue({ returning: returningFn });
+  mockUpdate.mockReturnValueOnce({ set: jest.fn().mockReturnValue({ where: firstWhere }) });
+
+  const secondWhere = jest.fn().mockResolvedValue([]);
+  mockUpdate.mockReturnValueOnce({ set: jest.fn().mockReturnValue({ where: secondWhere }) });
+}
+
 function makeGetPacientesChain(result: unknown[]) {
   const whereFn = jest.fn().mockResolvedValue(result);
   mockSelectDistinct.mockReturnValueOnce({
@@ -323,5 +332,68 @@ describe("PATCH /api/consultas/:id/concluir", () => {
 
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ id: 1, status: "concluida" });
+  });
+});
+
+describe("PATCH /api/consultas/:id/cancelar", () => {
+  const consultaAgendada = { id: 1, pacienteId: 10, status: "agendada" };
+
+  beforeEach(() => {
+    mockSelect.mockReset();
+    mockUpdate.mockReset();
+    currentMockUser = { ...pacienteUser };
+  });
+
+  it("dado um médico, retorna 403 sem consultar o banco", async () => {
+    currentMockUser = { ...medicoUser };
+
+    const res = await request(app)
+      .patch("/api/consultas/1/cancelar")
+      .set("Authorization", "Bearer valid-token");
+
+    expect(res.status).toBe(403);
+    expect(mockSelect).not.toHaveBeenCalled();
+  });
+
+  it("dado um ID de consulta inexistente, retorna 404", async () => {
+    makeGetByIdChain([]);
+
+    const res = await request(app)
+      .patch("/api/consultas/999/cancelar")
+      .set("Authorization", "Bearer valid-token");
+
+    expect(res.status).toBe(404);
+  });
+
+  it("dado um paciente que não é o dono da consulta, retorna 403", async () => {
+    makeGetByIdChain([{ id: 1, pacienteId: 99, status: "agendada" }]);
+
+    const res = await request(app)
+      .patch("/api/consultas/1/cancelar")
+      .set("Authorization", "Bearer valid-token");
+
+    expect(res.status).toBe(403);
+  });
+
+  it("dado uma consulta com status diferente de agendada, retorna 422", async () => {
+    makeGetByIdChain([{ id: 1, pacienteId: 10, status: "cancelada" }]);
+
+    const res = await request(app)
+      .patch("/api/consultas/1/cancelar")
+      .set("Authorization", "Bearer valid-token");
+
+    expect(res.status).toBe(422);
+  });
+
+  it("dado uma consulta agendada do próprio paciente, retorna 200 com status cancelada", async () => {
+    makeGetByIdChain([consultaAgendada]);
+    makeUpdateCancelarChain([{ ...consultaAgendada, status: "cancelada", statusPagamento: "cancelado" }]);
+
+    const res = await request(app)
+      .patch("/api/consultas/1/cancelar")
+      .set("Authorization", "Bearer valid-token");
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ id: 1, status: "cancelada" });
   });
 });
