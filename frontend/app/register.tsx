@@ -12,6 +12,22 @@ import {
 } from "react-native";
 import { useRegister } from "../hooks/auth/useRegister";
 
+type ForcaInfo = { nivel: 0 | 1 | 2 | 3; label: string; cor: string };
+
+function calcularForca(senha: string): ForcaInfo {
+  if (senha.length === 0) return { nivel: 0, label: "", cor: "#e2e8f0" };
+  const criterios = [
+    senha.length >= 8,
+    /[A-Z]/.test(senha),
+    /[0-9]/.test(senha),
+    /[^A-Za-z0-9]/.test(senha),
+  ];
+  const pontos = criterios.filter(Boolean).length;
+  if (pontos <= 1) return { nivel: 1, label: "Fraca", cor: "#ef4444" };
+  if (pontos <= 3) return { nivel: 2, label: "Média", cor: "#f59e0b" };
+  return { nivel: 3, label: "Forte", cor: "#19c10f" };
+}
+
 export default function Register() {
   const [tipo, setTipo] = useState<"paciente" | "medico">("paciente");
   const [nome, setNome] = useState("");
@@ -20,7 +36,17 @@ export default function Register() {
   const [nomeFocused, setNomeFocused] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [senhaFocused, setSenhaFocused] = useState(false);
+  const [senhaVisivel, setSenhaVisivel] = useState(false);
   const { handleRegister, isLoading, error } = useRegister();
+
+  const forca = calcularForca(senha);
+
+  const requisitos = [
+    { label: "Ao menos 8 caracteres", ok: senha.length >= 8 },
+    { label: "Uma letra maiúscula", ok: /[A-Z]/.test(senha) },
+    { label: "Um número", ok: /[0-9]/.test(senha) },
+    { label: "Um caractere especial", ok: /[^A-Za-z0-9]/.test(senha) },
+  ];
 
   return (
     <KeyboardAvoidingView
@@ -109,16 +135,66 @@ export default function Register() {
         />
 
         <Text style={styles.label}>Senha</Text>
-        <TextInput
-          placeholder="••••••••"
-          value={senha}
-          onChangeText={setSenha}
-          secureTextEntry
-          style={[styles.input, senhaFocused && styles.inputFocused]}
-          onFocus={() => setSenhaFocused(true)}
-          onBlur={() => setSenhaFocused(false)}
-          placeholderTextColor="#94a3b8"
-        />
+        <View style={styles.inputWrapper}>
+          <TextInput
+            placeholder="••••••••"
+            value={senha}
+            onChangeText={setSenha}
+            secureTextEntry={!senhaVisivel}
+            style={[
+              styles.input,
+              styles.inputWithToggle,
+              senhaFocused && styles.inputFocused,
+            ]}
+            onFocus={() => setSenhaFocused(true)}
+            onBlur={() => setSenhaFocused(false)}
+            placeholderTextColor="#94a3b8"
+          />
+          <Pressable
+            style={styles.eyeBtn}
+            onPress={() => setSenhaVisivel((v) => !v)}
+          >
+            <Text style={styles.eyeText}>
+              {senhaVisivel ? "Ocultar" : "Mostrar"}
+            </Text>
+          </Pressable>
+        </View>
+
+        {senha.length > 0 && (
+          <View style={styles.forcaContainer}>
+            <View style={styles.forcaBarRow}>
+              {[1, 2, 3].map((i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.forcaSegmento,
+                    {
+                      backgroundColor:
+                        forca.nivel >= i ? forca.cor : "#e2e8f0",
+                    },
+                  ]}
+                />
+              ))}
+            </View>
+            <Text style={[styles.forcaLabel, { color: forca.cor }]}>
+              {forca.label}
+            </Text>
+
+            <View style={styles.requisitosContainer}>
+              {requisitos.map((r) => (
+                <Text
+                  key={r.label}
+                  style={[
+                    styles.requisito,
+                    r.ok ? styles.requisitoCumprido : styles.requisitoFaltando,
+                  ]}
+                >
+                  {r.ok ? "✓" : "○"} {r.label}
+                </Text>
+              ))}
+            </View>
+          </View>
+        )}
 
         <Text style={styles.terms}>
           Ao criar conta, você concorda com os{" "}
@@ -309,6 +385,67 @@ const styles = StyleSheet.create({
   inputFocused: {
     borderColor: "#19c10f",
     backgroundColor: "#fff",
+  },
+
+  inputWrapper: {
+    position: "relative",
+  },
+
+  inputWithToggle: {
+    paddingRight: 80,
+  },
+
+  eyeBtn: {
+    position: "absolute",
+    right: 14,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+  },
+
+  eyeText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#64748b",
+  },
+
+  forcaContainer: {
+    marginTop: 10,
+  },
+
+  forcaBarRow: {
+    flexDirection: "row",
+    gap: 4,
+    marginBottom: 4,
+  },
+
+  forcaSegmento: {
+    flex: 1,
+    height: 4,
+    borderRadius: 99,
+  },
+
+  forcaLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+
+  requisitosContainer: {
+    gap: 3,
+  },
+
+  requisito: {
+    fontSize: 12,
+  },
+
+  requisitoCumprido: {
+    color: "#19c10f",
+    fontWeight: "500",
+  },
+
+  requisitoFaltando: {
+    color: "#94a3b8",
   },
 
   terms: {

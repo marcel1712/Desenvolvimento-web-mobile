@@ -17,6 +17,7 @@ export default function Login() {
   const [senha, setSenha] = useState("");
   const [emailFocused, setEmailFocused] = useState(false);
   const [senhaFocused, setSenhaFocused] = useState(false);
+  const [senhaVisivel, setSenhaVisivel] = useState(false);
   const { handleLogin, isLoading, error } = useLogin();
 
   return (
@@ -53,16 +54,30 @@ export default function Login() {
         />
 
         <Text style={styles.label}>Senha</Text>
-        <TextInput
-          placeholder="••••••••"
-          value={senha}
-          onChangeText={setSenha}
-          secureTextEntry
-          style={[styles.input, senhaFocused && styles.inputFocused]}
-          onFocus={() => setSenhaFocused(true)}
-          onBlur={() => setSenhaFocused(false)}
-          placeholderTextColor="#94a3b8"
-        />
+        <View style={styles.inputWrapper}>
+          <TextInput
+            placeholder="••••••••"
+            value={senha}
+            onChangeText={setSenha}
+            secureTextEntry={!senhaVisivel}
+            style={[
+              styles.input,
+              styles.inputWithToggle,
+              senhaFocused && styles.inputFocused,
+            ]}
+            onFocus={() => setSenhaFocused(true)}
+            onBlur={() => setSenhaFocused(false)}
+            placeholderTextColor="#94a3b8"
+          />
+          <Pressable
+            style={styles.eyeBtn}
+            onPress={() => setSenhaVisivel((v) => !v)}
+          >
+            <Text style={styles.eyeText}>
+              {senhaVisivel ? "Ocultar" : "Mostrar"}
+            </Text>
+          </Pressable>
+        </View>
 
         {error && (
           <View style={styles.errorBox}>
@@ -199,6 +214,28 @@ const styles = StyleSheet.create({
   inputFocused: {
     borderColor: "#19c10f",
     backgroundColor: "#fff",
+  },
+
+  inputWrapper: {
+    position: "relative",
+  },
+
+  inputWithToggle: {
+    paddingRight: 80,
+  },
+
+  eyeBtn: {
+    position: "absolute",
+    right: 14,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+  },
+
+  eyeText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#64748b",
   },
 
   errorBox: {
