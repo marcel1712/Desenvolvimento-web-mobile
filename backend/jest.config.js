@@ -5,4 +5,5 @@ module.exports = {
   testMatch: ['**/__tests__/**/*.test.ts'],
   moduleFileExtensions: ['ts', 'js'],
   clearMocks: true,
+  maxWorkers: 2,
 };
