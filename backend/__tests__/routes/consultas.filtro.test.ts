@@ -397,3 +397,53 @@ describe("PATCH /api/consultas/:id/cancelar", () => {
     expect(res.body).toMatchObject({ id: 1, status: "cancelada" });
   });
 });
+
+describe("GET /api/consultas/:id/link", () => {
+  beforeEach(() => {
+    mockSelect.mockReset();
+    currentMockUser = { ...pacienteUser };
+  });
+
+  it("dado um ID de consulta inexistente, retorna 404", async () => {
+    makeGetByIdChain([]);
+
+    const res = await request(app)
+      .get("/api/consultas/999/link")
+      .set("Authorization", "Bearer valid-token");
+
+    expect(res.status).toBe(404);
+  });
+
+  it("dado um usuário que não participa da consulta, retorna 403", async () => {
+    currentMockUser = { id: 99, email: "other@test.com", tipo: "paciente" as const };
+    makeGetByIdChain([{ pacienteId: 10, medicoId: 20, linkMeet: "https://meet.google.com/abc", status: "agendada" }]);
+
+    const res = await request(app)
+      .get("/api/consultas/1/link")
+      .set("Authorization", "Bearer valid-token");
+
+    expect(res.status).toBe(403);
+  });
+
+  it("dado uma consulta sem linkMeet, retorna 404 com mensagem de link indisponível", async () => {
+    makeGetByIdChain([{ pacienteId: 10, medicoId: 20, linkMeet: null, status: "agendada" }]);
+
+    const res = await request(app)
+      .get("/api/consultas/1/link")
+      .set("Authorization", "Bearer valid-token");
+
+    expect(res.status).toBe(404);
+    expect(res.body).toMatchObject({ message: expect.stringContaining("disponível") });
+  });
+
+  it("dado uma consulta com linkMeet preenchido, retorna 200 com o link", async () => {
+    makeGetByIdChain([{ pacienteId: 10, medicoId: 20, linkMeet: "https://meet.google.com/abc-xyz", status: "agendada" }]);
+
+    const res = await request(app)
+      .get("/api/consultas/1/link")
+      .set("Authorization", "Bearer valid-token");
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ linkMeet: "https://meet.google.com/abc-xyz" });
+  });
+});
