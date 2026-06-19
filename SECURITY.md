@@ -94,7 +94,7 @@ export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://api.vitalgoal
 
 ---
 
-## 5. Requisitos de Senha Fracos
+## 5. Requisitos de Senha Fracos - COMPLETADO
 
 **OWASP A07 — Falhas de Identificação e Autenticação**
 
