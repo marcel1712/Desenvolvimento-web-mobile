@@ -8,6 +8,7 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "types": ["jest", "node"]
+    "types": ["jest", "node"],
+    "ignoreDeprecations": "6.0"
   }
 }
