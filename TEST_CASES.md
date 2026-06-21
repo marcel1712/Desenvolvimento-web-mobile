@@ -92,58 +92,58 @@ Estado atual (medido em 2026-06-18):
 
 ---
 
-### A implementar
+### Implementados (adicionados após 2026-06-18)
 
-**GET /api/consultas — filtro por usuário** - COMPLETADO
-- [ ] Dado um paciente autenticado, deve retornar apenas as consultas onde ele é o paciente
-- [ ] Dado um médico autenticado, deve retornar apenas as consultas onde ele é o médico
+**GET /api/consultas — filtro por usuário**
+- [x] Dado um paciente autenticado, deve retornar apenas as consultas onde ele é o paciente
+- [x] Dado um médico autenticado, deve retornar apenas as consultas onde ele é o médico
 
-**GET /api/consultas/pacientes** - COMPLETADO
-- [ ] Dado um usuário com `tipo: "paciente"`, deve retornar 403
-- [ ] Dado um médico autenticado, deve retornar a lista de pacientes distintos que já consultaram com ele
+**GET /api/consultas/pacientes**
+- [x] Dado um usuário com `tipo: "paciente"`, deve retornar 403
+- [x] Dado um médico autenticado, deve retornar a lista de pacientes distintos que já consultaram com ele
 
-**GET /api/consultas/:id** - COMPLETADO
-- [ ] Dado um ID inexistente, deve retornar 404
-- [ ] Dado um usuário que não é nem paciente nem médico da consulta, deve retornar 403
-- [ ] Dado o paciente dono da consulta, deve retornar 200 com os dados
-- [ ] Dado o médico dono da consulta, deve retornar 200 com os dados
+**GET /api/consultas/:id**
+- [x] Dado um ID inexistente, deve retornar 404
+- [x] Dado um usuário que não é nem paciente nem médico da consulta, deve retornar 403
+- [x] Dado o paciente dono da consulta, deve retornar 200 com os dados
+- [x] Dado o médico dono da consulta, deve retornar 200 com os dados
 
-**GET /api/consultas/:id/documentos — controle de acesso** - COMPLETADO
-- [ ] Dado um usuário que não participa da consulta, deve retornar 403
+**GET /api/consultas/:id/documentos — controle de acesso**
+- [x] Dado um usuário que não participa da consulta, deve retornar 403
 
-**PATCH /api/consultas/:id/concluir** - COMPLETADO
-- [ ] Dado um usuário com `tipo: "paciente"`, deve retornar 403
-- [ ] Dado um ID de consulta inexistente, deve retornar 404
-- [ ] Dado um médico que não é o responsável pela consulta, deve retornar 403
-- [ ] Dado uma consulta com status diferente de `"agendada"`, deve retornar 422
-- [ ] Dado uma consulta `"agendada"` do próprio médico, deve retornar 200 com status `"concluida"`
+**PATCH /api/consultas/:id/concluir**
+- [x] Dado um usuário com `tipo: "paciente"`, deve retornar 403
+- [x] Dado um ID de consulta inexistente, deve retornar 404
+- [x] Dado um médico que não é o responsável pela consulta, deve retornar 403
+- [x] Dado uma consulta com status diferente de `"agendada"`, deve retornar 422
+- [x] Dado uma consulta `"agendada"` do próprio médico, deve retornar 200 com status `"concluida"`
 
-**PATCH /api/consultas/:id/cancelar** - COMPLETADO
-- [ ] Dado um usuário com `tipo: "medico"`, deve retornar 403
-- [ ] Dado um ID de consulta inexistente, deve retornar 404
-- [ ] Dado um paciente que não é o dono da consulta, deve retornar 403
-- [ ] Dado uma consulta com status diferente de `"agendada"`, deve retornar 422
-- [ ] Dado uma consulta `"agendada"` do próprio paciente, deve retornar 200 com status `"cancelada"`
+**PATCH /api/consultas/:id/cancelar**
+- [x] Dado um usuário com `tipo: "medico"`, deve retornar 403
+- [x] Dado um ID de consulta inexistente, deve retornar 404
+- [x] Dado um paciente que não é o dono da consulta, deve retornar 403
+- [x] Dado uma consulta com status diferente de `"agendada"`, deve retornar 422
+- [x] Dado uma consulta `"agendada"` do próprio paciente, deve retornar 200 com status `"cancelada"`
 
-**GET /api/consultas/:id/link** - COMPLETADO
-- [ ] Dado um ID de consulta inexistente, deve retornar 404
-- [ ] Dado um usuário que não participa da consulta, deve retornar 403
-- [ ] Dado uma consulta sem `linkMeet`, deve retornar 404 com mensagem de link indisponível
-- [ ] Dado uma consulta com `linkMeet` preenchido, deve retornar 200 com o link
+**GET /api/consultas/:id/link**
+- [x] Dado um ID de consulta inexistente, deve retornar 404
+- [x] Dado um usuário que não participa da consulta, deve retornar 403
+- [x] Dado uma consulta sem `linkMeet`, deve retornar 404 com mensagem de link indisponível
+- [x] Dado uma consulta com `linkMeet` preenchido, deve retornar 200 com o link
 
-**GET /api/disponibilidade/datas-disponiveis** - COMPLETADO
-- [ ] Dado ausência de `medicoId`, `inicio` ou `fim`, deve retornar 400
-- [ ] Dado um médico sem slots configurados, deve retornar array vazio
-- [ ] Dado slots configurados, deve retornar as datas com pelo menos um slot livre no intervalo
-- [ ] Dado todas as datas do intervalo completamente reservadas, deve retornar array vazio
-- [ ] Dado datas fora do intervalo solicitado, não devem aparecer no resultado
+**GET /api/disponibilidade/datas-disponiveis**
+- [x] Dado ausência de `medicoId`, `inicio` ou `fim`, deve retornar 400
+- [x] Dado um médico sem slots configurados, deve retornar array vazio
+- [x] Dado slots configurados, deve retornar as datas com pelo menos um slot livre no intervalo
+- [x] Dado todas as datas do intervalo completamente reservadas, deve retornar array vazio
+- [x] Dado datas fora do intervalo solicitado, não devem aparecer no resultado
 
-**Google Meet (`services/googleMeet.ts`)** - COMPLETADO
-- [ ] Dado um `state` válido, `getGoogleAuthUrl` deve retornar uma URL de autenticação contendo o scope
-- [ ] Dado um código de autorização válido, `getRefreshTokenFromCode` deve retornar o refresh token
-- [ ] Dado uma resposta do Google sem `refresh_token`, `getRefreshTokenFromCode` deve lançar erro
-- [ ] Dados os parâmetros de evento válidos, `createMeetEvent` deve retornar `meetLink` e `eventId`
-- [ ] Dado que o Google não retorna `hangoutLink`, `createMeetEvent` deve lançar erro
+**Google Meet (`services/googleMeet.ts`)**
+- [x] Dado um `state` válido, `getGoogleAuthUrl` deve retornar uma URL de autenticação contendo o scope
+- [x] Dado um código de autorização válido, `getRefreshTokenFromCode` deve retornar o refresh token
+- [x] Dado uma resposta do Google sem `refresh_token`, `getRefreshTokenFromCode` deve lançar erro
+- [x] Dados os parâmetros de evento válidos, `createMeetEvent` deve retornar `meetLink` e `eventId`
+- [x] Dado que o Google não retorna `hangoutLink`, `createMeetEvent` deve lançar erro
 
 ---
 
@@ -190,77 +190,77 @@ Estado atual (medido em 2026-06-18):
 - [x] Dado consulta sem documentos, deve exibir estado vazio
 - [x] Dado upload de arquivo, deve adicionar o documento à lista após sucesso
 
-**`consultasNavigation.test.tsx` — FALHANDO**
-- [ ] QUEBRADO — Dado que o usuário pressiona "Ver documentos", deve navegar para `/documentos/:id` (falta `ToastProvider` no wrapper do teste)
+**`consultasNavigation.test.tsx`**
+- [x] Dado que o usuário pressiona "Ver documentos", deve navegar para `/documentos/:id`
 
 ---
 
-### A implementar
+### Implementados (adicionados após 2026-06-18)
 
 **`lib/api.ts` — função `apiFetch`**
-- [ ] Dado um token, deve incluir o header `Authorization: Bearer <token>` na requisição
-- [ ] Dado ausência de token, não deve incluir o header `Authorization`
-- [ ] Dado resposta com status 200, deve retornar o JSON parseado
-- [ ] Dado resposta com status 204, deve retornar `undefined`
-- [ ] Dado resposta com status de erro (4xx/5xx), deve lançar erro com a mensagem da API
-- [ ] Dado resposta de erro sem JSON válido no body, deve lançar erro com mensagem de fallback
+- [x] Dado um token, deve incluir o header `Authorization: Bearer <token>` na requisição
+- [x] Dado ausência de token, não deve incluir o header `Authorization`
+- [x] Dado resposta com status 200, deve retornar o JSON parseado
+- [x] Dado resposta com status 204, deve retornar `undefined`
+- [x] Dado resposta com status de erro (4xx/5xx), deve lançar erro com a mensagem da API
+- [x] Dado resposta de erro sem JSON válido no body, deve lançar erro com mensagem de fallback
 
 **`AuthContext` — provedor de autenticação**
-- [ ] Dado token e usuário salvos no AsyncStorage, devem ser carregados ao inicializar o app
-- [ ] Dado ausência de dados no AsyncStorage, `usuario` e `token` devem ser `null`
-- [ ] Dado chamada de `login`, token e usuário devem ser salvos no AsyncStorage e no estado
-- [ ] Dado chamada de `logout`, token e usuário devem ser removidos do AsyncStorage e limpos do estado
-- [ ] Dado qualquer estado, `isLoading` deve ser `true` durante a inicialização e `false` após
+- [x] Dado token e usuário salvos no AsyncStorage, devem ser carregados ao inicializar o app
+- [x] Dado ausência de dados no AsyncStorage, `usuario` e `token` devem ser `null`
+- [x] Dado chamada de `login`, token e usuário devem ser salvos no AsyncStorage e no estado
+- [x] Dado chamada de `logout`, token e usuário devem ser removidos do AsyncStorage e limpos do estado
+- [x] Dado qualquer estado, `isLoading` deve ser `true` durante a inicialização e `false` após
 
 **`useAuth`**
-- [ ] Dado uso dentro de um `AuthProvider`, deve retornar o contexto de autenticação
+- [x] Dado uso dentro de um `AuthProvider`, deve retornar o contexto de autenticação
 
 **`useMetasPaciente`**
-- [ ] Dado um `pacienteId` válido e token, deve buscar as metas do paciente ao montar
-- [ ] Dado `token` nulo, deve retornar lista vazia sem fazer requisição
-- [ ] Dado `pacienteId` nulo, deve retornar lista vazia sem fazer requisição
-- [ ] Dado falha na API, deve registrar o erro
+- [x] Dado um `pacienteId` válido e token, deve buscar as metas do paciente ao montar
+- [x] Dado `pacienteId` nulo, deve retornar lista vazia sem fazer requisição
+- [x] Dado falha na API, deve registrar o erro
 
 **`useConsultas`**
-- [ ] Dado um token válido, deve carregar a lista de consultas ao montar
-- [ ] Dado ausência de token, não deve fazer requisição e deve finalizar o carregamento
-- [ ] Dado falha na API, deve registrar o erro
-- [ ] Dado chamada de `concluir`, o status da consulta na lista deve mudar para `"concluida"` sem recarregar tudo
-- [ ] Dado chamada de `cancelar`, o status deve mudar para `"cancelada"` e o pagamento para `"cancelado"`
-- [ ] Dado `token` nulo ao chamar `concluir` ou `cancelar`, deve lançar erro
+- [x] Dado um token válido, deve carregar a lista de consultas ao montar
+- [x] Dado ausência de token, não deve fazer requisição e deve finalizar o carregamento
+- [x] Dado falha na API, deve registrar o erro
+- [x] Dado chamada de `concluir`, o status da consulta na lista deve mudar para `"concluida"` sem recarregar tudo
+- [x] Dado chamada de `cancelar`, o status deve mudar para `"cancelada"` e o pagamento para `"cancelado"`
+- [x] Dado `token` nulo ao chamar `concluir` ou `cancelar`, deve lançar erro
 
 **`useAgendarConsulta`**
-- [ ] Dado payload válido, `agendar` deve retornar os dados da consulta criada
-- [ ] Dado uma requisição em andamento, `isLoading` deve ser `true` e voltar para `false` ao terminar
-- [ ] Dado falha na API, deve registrar o erro e relançá-lo para o chamador
-- [ ] Dado nova chamada de `agendar`, o erro anterior deve ser limpo
+- [x] Dado payload válido, `agendar` deve retornar os dados da consulta criada
+- [x] Dado falha na API, deve registrar o erro e relançá-lo para o chamador
+- [x] Dado nova chamada de `agendar`, o erro anterior deve ser limpo
 
 **`usePagamentos`**
-- [ ] Dado um token válido, deve carregar a lista de pagamentos ao montar
-- [ ] Dado ausência de token, deve finalizar o carregamento sem fazer requisição
-- [ ] Dado falha na API, deve registrar o erro
-- [ ] Dado chamada de `confirmarPagamento`, o status do pagamento na lista deve mudar para `"aprovado"`
-- [ ] Dado `token` nulo ao confirmar, deve lançar erro
+- [x] Dado um token válido, deve carregar a lista de pagamentos ao montar
+- [x] Dado ausência de token, deve finalizar o carregamento sem fazer requisição
+- [x] Dado falha na API, deve registrar o erro
+- [x] Dado chamada de `confirmarPagamento`, o status do pagamento na lista deve mudar para `"aprovado"`
+- [x] Dado `token` nulo ao confirmar, deve lançar erro
 
 **`useMedicos`**
-- [ ] Dado um token válido, deve carregar a lista de médicos ao montar
-- [ ] Dado ausência de token, deve finalizar o carregamento sem fazer requisição
-- [ ] Dado falha na API, deve registrar o erro
+- [x] Dado um token válido, deve carregar a lista de médicos ao montar
+- [x] Dado ausência de token, deve finalizar o carregamento sem fazer requisição
+- [x] Dado falha na API, deve registrar o erro
 
 **`useProtocolos`**
-- [ ] Dado um token válido, deve carregar a lista de protocolos ao montar
-- [ ] Dado ausência de token, deve finalizar o carregamento sem fazer requisição
-- [ ] Dado falha na API, deve registrar o erro
-- [ ] Dado chamada de `createProtocolo` com sucesso, o novo protocolo deve aparecer na lista
+- [x] Dado um token válido, deve carregar a lista de protocolos ao montar
+- [x] Dado ausência de token, deve finalizar o carregamento sem fazer requisição
+- [x] Dado falha na API, deve registrar o erro
+- [x] Dado chamada de `createProtocolo` com sucesso, o novo protocolo deve aparecer na lista
 
 **`useAnamneses`**
-- [ ] Dado um token válido, deve carregar a lista de anamneses ao montar
-- [ ] Dado ausência de token, deve finalizar o carregamento sem fazer requisição
-- [ ] Dado chamada de `salvar` sem anamnese existente, deve criar via POST e atualizar o estado
-- [ ] Dado chamada de `salvar` com anamnese existente, deve atualizar via PUT e atualizar o estado
-- [ ] Dado `token` nulo ao salvar, deve lançar erro
+- [x] Dado um token válido, deve carregar a lista de anamneses ao montar
+- [x] Dado ausência de token, deve finalizar o carregamento sem fazer requisição
+- [x] Dado chamada de `salvar` sem anamnese existente, deve criar via POST e atualizar o estado
+- [x] Dado chamada de `salvar` com anamnese existente, deve atualizar via PUT e atualizar o estado
+- [x] Dado `token` nulo ao salvar, deve lançar erro
 
-**`useDatasDisponiveis`**
+### A implementar
+
+**`useDatasDisponiveis`** — hook ainda não existe no frontend
 - [ ] Dado `medicoId` e token válidos, deve buscar as datas disponíveis do médico
 - [ ] Dado `token` nulo, deve retornar `Set` vazio sem fazer requisição
 - [ ] Dado `medicoId` nulo, deve retornar `Set` vazio sem fazer requisição

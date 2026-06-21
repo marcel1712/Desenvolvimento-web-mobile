@@ -12,8 +12,9 @@ jest.mock("../lib/api", () => ({
   apiFetch: (...args: unknown[]) => mockApiFetch(...args),
 }));
 
+let mockToken: string | null = "test-token";
 jest.mock("../hooks/auth/useAuth", () => ({
-  useAuth: () => ({ token: "test-token" }),
+  useAuth: () => ({ token: mockToken }),
 }));
 
 const fakeAnamneseMedico: AnamneseMedico = {
@@ -56,6 +57,7 @@ const fakeAnamnesePaciente: AnamnesePaciente = {
 describe("useAnamneses", () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
+    mockToken = "test-token";
   });
 
   it("fetches anamneses on mount and populates the list", async () => {
@@ -96,11 +98,23 @@ describe("useAnamneses", () => {
       expect.objectContaining({ token: "test-token" })
     );
   });
+
+  it("dado ausência de token, não faz requisição e finaliza isLoading", async () => {
+    mockToken = null;
+
+    const { result } = await renderHook(() => useAnamneses());
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(mockApiFetch).not.toHaveBeenCalled();
+    expect(result.current.anamneses).toEqual([]);
+  });
 });
 
 describe("usePacienteAnamnese", () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
+    mockToken = "test-token";
   });
 
   it("fetches existing anamnese on mount", async () => {
@@ -216,6 +230,36 @@ describe("usePacienteAnamnese", () => {
     });
 
     expect(result.current.isSaving).toBe(false);
+  });
+
+  it("dado ausência de token, não faz requisição e finaliza isLoading", async () => {
+    mockToken = null;
+
+    const { result } = await renderHook(() => usePacienteAnamnese());
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(mockApiFetch).not.toHaveBeenCalled();
+    expect(result.current.anamnese).toBeNull();
+  });
+
+  it("dado token nulo ao chamar salvar, lança erro", async () => {
+    mockToken = null;
+
+    const { result } = await renderHook(() => usePacienteAnamnese());
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    let caughtError: Error | null = null;
+    await act(async () => {
+      try {
+        await result.current.salvar({ objetivo: "teste" });
+      } catch (e) {
+        caughtError = e as Error;
+      }
+    });
+
+    expect(caughtError?.message).toBe("Não autenticado");
   });
 
   it("resets isSaving to false even when salvar throws", async () => {

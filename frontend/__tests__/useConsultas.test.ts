@@ -7,8 +7,9 @@ jest.mock("../lib/api", () => ({
   apiFetch: (...args: unknown[]) => mockApiFetch(...args),
 }));
 
+let mockToken: string | null = "test-token";
 jest.mock("../hooks/auth/useAuth", () => ({
-  useAuth: () => ({ token: "test-token" }),
+  useAuth: () => ({ token: mockToken }),
 }));
 
 jest.mock("../hooks/useModal", () => ({
@@ -29,6 +30,7 @@ const fakeConsulta: Consulta = {
 describe("useConsultas", () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
+    mockToken = "test-token";
   });
 
   it("fetches consultas on mount and populates the list", async () => {
@@ -186,5 +188,54 @@ describe("useConsultas", () => {
       expect(result.current.consultas[1].status).toBe("agendada");
       expect(result.current.consultas[1].statusPagamento).toBe("pendente");
     });
+  });
+
+  it("dado ausência de token, não faz requisição e finaliza isLoading", async () => {
+    mockToken = null;
+
+    const { result } = await renderHook(() => useConsultas());
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(mockApiFetch).not.toHaveBeenCalled();
+    expect(result.current.consultas).toEqual([]);
+  });
+
+  it("dado token nulo ao chamar concluir, lança erro", async () => {
+    mockToken = null;
+
+    const { result } = await renderHook(() => useConsultas());
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    let caughtError: Error | null = null;
+    await act(async () => {
+      try {
+        await result.current.concluir(1);
+      } catch (e) {
+        caughtError = e as Error;
+      }
+    });
+
+    expect(caughtError?.message).toBe("Não autenticado");
+  });
+
+  it("dado token nulo ao chamar cancelar, lança erro", async () => {
+    mockToken = null;
+
+    const { result } = await renderHook(() => useConsultas());
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    let caughtError: Error | null = null;
+    await act(async () => {
+      try {
+        await result.current.cancelar(1);
+      } catch (e) {
+        caughtError = e as Error;
+      }
+    });
+
+    expect(caughtError?.message).toBe("Não autenticado");
   });
 });

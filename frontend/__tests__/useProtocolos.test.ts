@@ -7,8 +7,9 @@ jest.mock("../lib/api", () => ({
   apiFetch: (...args: unknown[]) => mockApiFetch(...args),
 }));
 
+let mockToken: string | null = "test-token";
 jest.mock("../hooks/auth/useAuth", () => ({
-  useAuth: () => ({ token: "test-token" }),
+  useAuth: () => ({ token: mockToken }),
 }));
 
 const fakeProtocolo: Protocolo = {
@@ -27,6 +28,7 @@ const fakeProtocolo: Protocolo = {
 describe("useProtocolos", () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
+    mockToken = "test-token";
   });
 
   it("fetches protocolos on mount and populates the list", async () => {
@@ -117,6 +119,17 @@ describe("useProtocolos", () => {
       expect(result.current.protocolos).toHaveLength(2);
       expect(result.current.protocolos[1]).toEqual(secondProtocolo);
     });
+  });
+
+  it("dado ausência de token, não faz requisição e finaliza isLoading", async () => {
+    mockToken = null;
+
+    const { result } = await renderHook(() => useProtocolos());
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(mockApiFetch).not.toHaveBeenCalled();
+    expect(result.current.protocolos).toEqual([]);
   });
 
   it("createProtocolo re-throws on API error", async () => {

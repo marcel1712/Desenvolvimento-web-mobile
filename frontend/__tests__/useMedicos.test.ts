@@ -7,8 +7,9 @@ jest.mock("../lib/api", () => ({
   apiFetch: (...args: unknown[]) => mockApiFetch(...args),
 }));
 
+let mockToken: string | null = "test-token";
 jest.mock("../hooks/auth/useAuth", () => ({
-  useAuth: () => ({ token: "test-token" }),
+  useAuth: () => ({ token: mockToken }),
 }));
 
 const fakeMedico: Medico = {
@@ -22,6 +23,7 @@ const fakeMedico: Medico = {
 describe("useMedicos", () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
+    mockToken = "test-token";
   });
 
   it("fetches medicos on mount and populates the list", async () => {
@@ -82,6 +84,17 @@ describe("useMedicos", () => {
 
     expect(result.current.medicos).toEqual([]);
     expect(result.current.error).toBeNull();
+  });
+
+  it("dado ausência de token, não faz requisição e finaliza isLoading", async () => {
+    mockToken = null;
+
+    const { result } = await renderHook(() => useMedicos());
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(mockApiFetch).not.toHaveBeenCalled();
+    expect(result.current.medicos).toEqual([]);
   });
 
   it("handles multiple medicos correctly", async () => {
