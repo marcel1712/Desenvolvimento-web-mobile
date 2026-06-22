@@ -38,11 +38,25 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "c65b5356-a009-449d-80c2-6c33592c4546"
+      }
+    },
+    "owner": "davimoreira271",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/c65b5356-a009-449d-80c2-6c33592c4546"
     }
   }
 }

@@ -1,5 +1,21 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
 import { createContext, useEffect, useState } from "react";
+import { Platform } from "react-native";
+
+async function getItem(key: string): Promise<string | null> {
+  if (Platform.OS === "web") return localStorage.getItem(key);
+  return SecureStore.getItemAsync(key);
+}
+
+async function setItem(key: string, value: string): Promise<void> {
+  if (Platform.OS === "web") { localStorage.setItem(key, value); return; }
+  return SecureStore.setItemAsync(key, value);
+}
+
+async function deleteItem(key: string): Promise<void> {
+  if (Platform.OS === "web") { localStorage.removeItem(key); return; }
+  return SecureStore.deleteItemAsync(key);
+}
 
 export type Usuario = {
   id: number;
@@ -16,7 +32,9 @@ type AuthContextType = {
   logout: () => Promise<void>;
 };
 
-export const AuthContext = createContext<AuthContextType>({} as AuthContextType);
+export const AuthContext = createContext<AuthContextType>(
+  {} as AuthContextType,
+);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
@@ -25,8 +43,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     async function loadStoredAuth() {
-      const storedToken = await AsyncStorage.getItem("@vitalgoal:token");
-      const storedUser = await AsyncStorage.getItem("@vitalgoal:usuario");
+      // Lendo os dados de forma segura do hardware do dispositivo
+      const storedToken = await getItem("vitalgoal_token");
+      const storedUser = await getItem("vitalgoal_usuario");
+
       if (storedToken && storedUser) {
         setToken(storedToken);
         setUsuario(JSON.parse(storedUser));
@@ -37,15 +57,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   async function login(newToken: string, newUsuario: Usuario) {
-    await AsyncStorage.setItem("@vitalgoal:token", newToken);
-    await AsyncStorage.setItem("@vitalgoal:usuario", JSON.stringify(newUsuario));
+    // Salvando os dados de forma segura criptografada
+    await setItem("vitalgoal_token", newToken);
+    await setItem("vitalgoal_usuario", JSON.stringify(newUsuario));
+
     setToken(newToken);
     setUsuario(newUsuario);
   }
 
   async function logout() {
-    await AsyncStorage.removeItem("@vitalgoal:token");
-    await AsyncStorage.removeItem("@vitalgoal:usuario");
+    // Apagando os dados do cofre seguro
+    await deleteItem("vitalgoal_token");
+    await deleteItem("vitalgoal_usuario");
+
     setToken(null);
     setUsuario(null);
   }

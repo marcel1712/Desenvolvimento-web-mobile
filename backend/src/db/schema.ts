@@ -1,15 +1,15 @@
 import {
+  boolean,
+  integer,
+  json,
+  numeric,
+  pgEnum,
   pgTable,
   serial,
   text,
-  varchar,
-  integer,
-  numeric,
   timestamp,
-  pgEnum,
-  json,
-  boolean,
   uniqueIndex,
+  varchar,
 } from "drizzle-orm/pg-core";
 
 export const tipoUsuarioEnum = pgEnum("tipo_usuario", ["paciente", "medico"]);
@@ -29,7 +29,10 @@ export const nivelAtividadeEnum = pgEnum("nivel_atividade", [
   "moderado",
   "intenso",
 ]);
-export const tipoConsultaEnum = pgEnum("tipo_consulta", ["presencial", "teleconsulta"]);
+export const tipoConsultaEnum = pgEnum("tipo_consulta", [
+  "presencial",
+  "teleconsulta",
+]);
 
 export const usuarios = pgTable("usuarios", {
   id: serial("id").primaryKey(),
@@ -164,7 +167,13 @@ export const disponibilidadeMedicos = pgTable(
     uniqueIndex("disponibilidade_medico_slot_unique").on(
       table.medicoId,
       table.diaSemana,
-      table.horarioInicio
+      table.horarioInicio,
     ),
-  ]
+  ],
 );
+
+export const tokensRevogados = pgTable("tokens_revogados", {
+  id: serial("id").primaryKey(),
+  token: text("token").notNull().unique(),
+  revogadoEm: timestamp("revogado_em").defaultNow().notNull(),
+});
