@@ -1,5 +1,5 @@
+import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import type { Request, Response, NextFunction } from "express";
 
 export interface AuthPayload {
   id: number;
@@ -11,10 +11,18 @@ export interface AuthRequest extends Request {
   user?: AuthPayload;
 }
 
+// Verifica a variável de ambiente logo na inicialização do arquivo
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error(
+    "FATAL ERROR: JWT_SECRET não está definido nas variáveis de ambiente.",
+  );
+}
+
 export function authenticate(
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   const authHeader = req.headers.authorization;
 
@@ -26,7 +34,10 @@ export function authenticate(
   const token = authHeader.split(" ")[1]!;
 
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET ?? "secret") as AuthPayload;
+    const payload = jwt.verify(
+      token,
+      JWT_SECRET as string,
+    ) as unknown as AuthPayload;
     req.user = payload;
     next();
   } catch {

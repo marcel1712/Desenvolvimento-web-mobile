@@ -1,10 +1,12 @@
-export const API_URL = (
-  process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000"
-).replace(/\/$/, "");
+export const API_URL =
+  process.env.EXPO_PUBLIC_API_URL ?? "https://api.vitalgoal.com";
 
 type ApiOptions = RequestInit & { token?: string };
 
-export async function apiFetch<T>(path: string, options: ApiOptions = {}): Promise<T> {
+export async function apiFetch<T>(
+  path: string,
+  options: ApiOptions = {},
+): Promise<T> {
   const { token, ...fetchOptions } = options;
 
   const headers: Record<string, string> = {
@@ -19,7 +21,9 @@ export async function apiFetch<T>(path: string, options: ApiOptions = {}): Promi
   const res = await fetch(`${API_URL}${path}`, { ...fetchOptions, headers });
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ message: "Erro desconhecido" }));
+    const error = await res
+      .json()
+      .catch(() => ({ message: "Erro desconhecido" }));
     throw new Error(error.message || "Erro na requisição");
   }
 

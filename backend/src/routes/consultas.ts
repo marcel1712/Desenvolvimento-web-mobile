@@ -1,20 +1,43 @@
-import { Router } from "express";
-import type { Response } from "express";
+import { and, eq, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import { and, eq, sql, ne } from "drizzle-orm";
+import type { Response } from "express";
+import { Router } from "express";
 import multer from "multer";
+import { basename } from "path"; // <-- Import nativo adicionado para sanitizar os nomes
 import { db } from "../db";
-import { consultas, disponibilidadeMedicos, documentosConsulta, pagamentos, usuarios } from "../db/schema";
+import {
+  consultas,
+  disponibilidadeMedicos,
+  documentosConsulta,
+  pagamentos,
+  usuarios,
+} from "../db/schema";
+import type { AuthRequest } from "../middlewares/auth";
 import { authenticate } from "../middlewares/auth";
 import { validate } from "../middlewares/validate";
-import type { AuthRequest } from "../middlewares/auth";
-import { agendarConsultaSchema } from "../schemas/consulta.schema";
 import type { AgendarConsultaBody } from "../schemas/consulta.schema";
+import { agendarConsultaSchema } from "../schemas/consulta.schema";
 import { consultaIdParamSchema } from "../schemas/documento.schema";
 import { azureStorage } from "../services/azureStorage";
 import { createMeetEvent } from "../services/googleMeet";
 
-const multerUpload = multer({ storage: multer.memoryStorage() });
+const TIPOS_PERMITIDOS = ["application/pdf", "image/jpeg", "image/png"];
+const TAMANHO_MAXIMO = 5 * 1024 * 1024; // 5 MB
+
+const multerUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: TAMANHO_MAXIMO,
+  },
+  fileFilter: (_req, file, cb) => {
+    // Valida o MIME type para garantir que não é um executável disfarçado
+    if (TIPOS_PERMITIDOS.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Tipo_Invalido"));
+    }
+  },
+});
 
 const CONSULTA_DURATION_MINUTES = 30;
 
@@ -97,7 +120,9 @@ router.post(
     const { medicoId, dataHora, tipo } = req.body as AgendarConsultaBody;
 
     if (req.user!.tipo !== "paciente") {
-      res.status(403).json({ message: "Apenas pacientes podem agendar consultas." });
+      res
+        .status(403)
+        .json({ message: "Apenas pacientes podem agendar consultas." });
       return;
     }
 
@@ -134,12 +159,16 @@ router.post(
               and(
                 eq(disponibilidadeMedicos.medicoId, medicoId),
                 eq(disponibilidadeMedicos.diaSemana, diaSemana),
-                eq(disponibilidadeMedicos.horarioInicio, horarioInicio)
-              )
+                eq(disponibilidadeMedicos.horarioInicio, horarioInicio),
+              ),
             );
 
           if (!availabilitySlot) {
-            return { _error: 422, message: "O horário solicitado não faz parte da agenda do médico." };
+            return {
+              _error: 422,
+              message:
+                "O horário solicitado não faz parte da agenda do médico.",
+            };
           }
 
           const datePart =
@@ -157,8 +186,8 @@ router.post(
                 eq(consultas.medicoId, medicoId),
                 eq(consultas.status, "agendada"),
                 sql`TO_CHAR(${consultas.dataHora} AT TIME ZONE 'UTC', 'YYYY-MM-DD') = ${datePart}`,
-                sql`TO_CHAR(${consultas.dataHora} AT TIME ZONE 'UTC', 'HH24:MI') = ${horarioInicio}`
-              )
+                sql`TO_CHAR(${consultas.dataHora} AT TIME ZONE 'UTC', 'HH24:MI') = ${horarioInicio}`,
+              ),
             );
 
           if (conflictRow) {
@@ -184,11 +213,13 @@ router.post(
 
           return newConsulta;
         },
-        { isolationLevel: "serializable" }
+        { isolationLevel: "serializable" },
       );
 
       if (consulta && "_error" in consulta) {
-        res.status(consulta._error as number).json({ message: consulta.message });
+        res
+          .status(consulta._error as number)
+          .json({ message: consulta.message });
         return;
       }
 
@@ -202,7 +233,9 @@ router.post(
             .where(eq(usuarios.id, req.user!.id));
 
           const inicio = dataHoraDate;
-          const fim = new Date(inicio.getTime() + CONSULTA_DURATION_MINUTES * 60 * 1000);
+          const fim = new Date(
+            inicio.getTime() + CONSULTA_DURATION_MINUTES * 60 * 1000,
+          );
 
           const { meetLink, eventId } = await createMeetEvent({
             refreshToken: medico.googleRefreshToken,
@@ -235,9 +268,11 @@ router.post(
         return;
       }
       console.error(err);
-      res.status(500).json({ message: "Erro interno. Tente novamente mais tarde." });
+      res
+        .status(500)
+        .json({ message: "Erro interno. Tente novamente mais tarde." });
     }
-  }
+  },
 );
 
 router.get("/:id", async (req: AuthRequest, res: Response) => {
@@ -301,7 +336,7 @@ router.get("/:id/documentos", async (req: AuthRequest, res: Response) => {
         criadoEm: doc.criadoEm,
         url,
       };
-    })
+    }),
   );
 
   res.json(documentosComUrl);
@@ -309,6 +344,7 @@ router.get("/:id/documentos", async (req: AuthRequest, res: Response) => {
 
 router.post(
   "/:id/documentos",
+  // O multerUpload que configuramos lá em cima já vai bloquear aqui arquivos gigantes ou scripts!
   multerUpload.single("file"),
   async (req: AuthRequest, res: Response) => {
     if (!req.file) {
@@ -325,7 +361,10 @@ router.post(
     const consultaId = paramResult.data.id;
 
     const [consulta] = await db
-      .select({ pacienteId: consultas.pacienteId, medicoId: consultas.medicoId })
+      .select({
+        pacienteId: consultas.pacienteId,
+        medicoId: consultas.medicoId,
+      })
       .from(consultas)
       .where(eq(consultas.id, consultaId));
 
@@ -335,20 +374,33 @@ router.post(
     }
 
     const pertenceAoUsuario =
-      consulta.pacienteId === req.user!.id || consulta.medicoId === req.user!.id;
+      consulta.pacienteId === req.user!.id ||
+      consulta.medicoId === req.user!.id;
 
     if (!pertenceAoUsuario) {
       res.status(403).json({ message: "Acesso negado." });
       return;
     }
 
-    const blobName = `consultas/${consultaId}/${Date.now()}-${req.file.originalname}`;
+    // =================================================================
+    // SEGURANÇA: Sanitização contra Path Traversal
+    // =================================================================
+    // Remove caminhos relativos (../) e substitui caracteres estranhos por '_'
+    const nomeSeguro = basename(req.file.originalname).replace(
+      /[^a-zA-Z0-9._-]/g,
+      "_",
+    );
+
+    // O blobName agora está totalmente blindado
+    const blobName = `consultas/${consultaId}/${Date.now()}-${nomeSeguro}`;
     const contentType = req.file.mimetype || "application/octet-stream";
 
     try {
       await azureStorage.uploadBlob(req.file.buffer, blobName, contentType);
     } catch {
-      res.status(502).json({ message: "Document storage unavailable. Please try again." });
+      res
+        .status(502)
+        .json({ message: "Document storage unavailable. Please try again." });
       return;
     }
 
@@ -356,8 +408,8 @@ router.post(
       .insert(documentosConsulta)
       .values({
         consultaId,
-        nomeArquivo: req.file.originalname,
-        blobName,
+        nomeArquivo: req.file.originalname, // Podemos manter o original no banco para exibição visual
+        blobName, // Mas usamos a versão segura na nuvem!
         tipoMime: req.file.mimetype || null,
         uploaderId: req.user!.id,
       })
@@ -373,21 +425,27 @@ router.post(
       criadoEm: doc!.criadoEm,
       url,
     });
-  }
+  },
 );
 
 router.patch("/:id/concluir", async (req: AuthRequest, res: Response) => {
   const { id: userId, tipo } = req.user!;
 
   if (tipo !== "medico") {
-    res.status(403).json({ message: "Apenas médicos podem concluir consultas." });
+    res
+      .status(403)
+      .json({ message: "Apenas médicos podem concluir consultas." });
     return;
   }
 
   const consultaId = Number(req.params.id);
 
   const [consulta] = await db
-    .select({ id: consultas.id, medicoId: consultas.medicoId, status: consultas.status })
+    .select({
+      id: consultas.id,
+      medicoId: consultas.medicoId,
+      status: consultas.status,
+    })
     .from(consultas)
     .where(eq(consultas.id, consultaId));
 
@@ -402,7 +460,9 @@ router.patch("/:id/concluir", async (req: AuthRequest, res: Response) => {
   }
 
   if (consulta.status !== "agendada") {
-    res.status(422).json({ message: "Apenas consultas agendadas podem ser concluídas." });
+    res
+      .status(422)
+      .json({ message: "Apenas consultas agendadas podem ser concluídas." });
     return;
   }
 
@@ -419,14 +479,20 @@ router.patch("/:id/cancelar", async (req: AuthRequest, res: Response) => {
   const { id: userId, tipo } = req.user!;
 
   if (tipo !== "paciente") {
-    res.status(403).json({ message: "Apenas pacientes podem cancelar consultas." });
+    res
+      .status(403)
+      .json({ message: "Apenas pacientes podem cancelar consultas." });
     return;
   }
 
   const consultaId = Number(req.params.id);
 
   const [consulta] = await db
-    .select({ id: consultas.id, pacienteId: consultas.pacienteId, status: consultas.status })
+    .select({
+      id: consultas.id,
+      pacienteId: consultas.pacienteId,
+      status: consultas.status,
+    })
     .from(consultas)
     .where(eq(consultas.id, consultaId));
 
@@ -441,7 +507,9 @@ router.patch("/:id/cancelar", async (req: AuthRequest, res: Response) => {
   }
 
   if (consulta.status !== "agendada") {
-    res.status(422).json({ message: "Apenas consultas agendadas podem ser canceladas." });
+    res
+      .status(422)
+      .json({ message: "Apenas consultas agendadas podem ser canceladas." });
     return;
   }
 
@@ -457,8 +525,8 @@ router.patch("/:id/cancelar", async (req: AuthRequest, res: Response) => {
     .where(
       and(
         eq(pagamentos.consultaId, consultaId),
-        eq(pagamentos.status, "pendente")
-      )
+        eq(pagamentos.status, "pendente"),
+      ),
     );
 
   res.json(updated);

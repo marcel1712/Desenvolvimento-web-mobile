@@ -1,21 +1,32 @@
-import { Router } from "express";
-import type { Request, Response } from "express";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import { eq } from "drizzle-orm";
+import type { Request, Response } from "express";
+import { Router } from "express";
+import jwt from "jsonwebtoken";
 import { db } from "../db";
-import { usuarios } from "../db/schema";
+import { tokensRevogados, usuarios } from "../db/schema";
+import type { AuthRequest } from "../middlewares/auth";
+import { authenticate } from "../middlewares/auth";
 import { validate } from "../middlewares/validate";
-import {
-  registerSchema,
-  loginSchema,
-  forgotPasswordSchema,
+import type {
+  ForgotPasswordBody,
+  LoginBody,
+  RegisterBody,
 } from "../schemas/auth.schema";
-import type { RegisterBody, LoginBody, ForgotPasswordBody } from "../schemas/auth.schema";
+import {
+  forgotPasswordSchema,
+  loginSchema,
+  registerSchema,
+} from "../schemas/auth.schema";
 
 const router = Router();
 
-const JWT_SECRET = process.env.JWT_SECRET ?? "secret";
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error(
+    "FATAL ERROR: JWT_SECRET não está definido nas variáveis de ambiente.",
+  );
+}
 const SALT_ROUNDS = 10;
 
 router.post(
@@ -49,11 +60,11 @@ router.post(
     const token = jwt.sign(
       { id: usuario!.id, email: usuario!.email, tipo: usuario!.tipo },
       JWT_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "1d" },
     );
 
     res.status(201).json({ token, usuario });
-  }
+  },
 );
 
 router.post(
@@ -82,7 +93,7 @@ router.post(
     const token = jwt.sign(
       { id: usuario.id, email: usuario.email, tipo: usuario.tipo },
       JWT_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "1d" },
     );
 
     res.json({
@@ -94,7 +105,7 @@ router.post(
         tipo: usuario.tipo,
       },
     });
-  }
+  },
 );
 
 router.post(
@@ -110,14 +121,42 @@ router.post(
 
     // Sempre retornar 200 por seguranca
     if (!usuario) {
-      res.json({ message: "Se o e-mail existir, você receberá as instruções." });
+      res.json({
+        message: "Se o e-mail existir, você receberá as instruções.",
+      });
       return;
     }
 
     // TODO: talvez nao seja necessario implementar esse fluxo por completo, tem que ver com a lina
 
     res.json({ message: "Se o e-mail existir, você receberá as instruções." });
-  }
+  },
+);
+
+router.post(
+  "/logout",
+  authenticate,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const authHeader = req.headers.authorization;
+      const token = authHeader && authHeader.split(" ")[1];
+
+      if (!token) {
+        res.status(400).json({ message: "Token não fornecido." });
+        return;
+      }
+
+      // Salva o token na blacklist
+      await db.insert(tokensRevogados).values({ token });
+
+      res
+        .status(200)
+        .json({ message: "Logout realizado com sucesso e token revogado." });
+    } catch (error) {
+      console.error("Erro no logout:", error);
+      res.status(500).json({ message: "Erro interno ao realizar logout." });
+    }
+  },
 );
 
 export default router;

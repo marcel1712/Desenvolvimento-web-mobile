@@ -4,7 +4,7 @@ Este documento identifica as vulnerabilidades de segurança mais relevantes enco
 
 ---
 
-## 1. Segredo JWT com Valor Padrão Fixo no Código
+## 1. Segredo JWT com Valor Padrão Fixo no Código - FEITOOOO
 
 **OWASP A02 — Falhas Criptográficas**
 
@@ -25,7 +25,7 @@ if (!JWT_SECRET) throw new Error("JWT_SECRET não está definido");
 
 ---
 
-## 2. Ausência de Rate Limiting nos Endpoints de Autenticação
+## 2. Ausência de Rate Limiting nos Endpoints de Autenticação - FEITOOOO
 
 **OWASP A07 — Falhas de Identificação e Autenticação**
 
@@ -50,7 +50,7 @@ app.use("/api/auth/register", authLimiter);
 
 ---
 
-## 3. Token JWT Armazenado no AsyncStorage
+## 3. Token JWT Armazenado no AsyncStorage - FEITOOOO
 
 **OWASP Mobile M9 — Armazenamento Inseguro de Dados**
 
@@ -74,7 +74,7 @@ await SecureStore.deleteItemAsync("@vitalgoal:token");
 
 ---
 
-## 4. Comunicação com a API via HTTP (Sem TLS)
+## 4. Comunicação com a API via HTTP (Sem TLS) - FEITOOOO
 
 **OWASP A02 — Falhas Criptográficas**
 
@@ -89,7 +89,8 @@ Todas as requisições, incluindo credenciais de login e dados sensíveis de sa�
 **Correção:** Implantar o backend com HTTPS e atualizar a URL para usar `https://` em todos os ambientes. Utilizar uma variável de ambiente para não fixar a URL no código.
 
 ```ts
-export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://api.vitalgoal.com";
+export const API_URL =
+  process.env.EXPO_PUBLIC_API_URL ?? "https://api.vitalgoal.com";
 ```
 
 ---
@@ -118,7 +119,7 @@ senha: z
 
 ---
 
-## 6. CORS Configurado para Permitir Qualquer Origem
+## 6. CORS Configurado para Permitir Qualquer Origem - FEITOOOO
 
 **OWASP A05 — Configuração de Segurança Incorreta**
 
@@ -133,19 +134,21 @@ Sem restrição de `origin`, qualquer site pode fazer requisições autenticadas
 **Correção:** Restringir o CORS às origens conhecidas da aplicação.
 
 ```ts
-app.use(cors({
-  origin: [
-    "https://app.vitalgoal.com",
-    process.env.DEV_ORIGIN ?? "http://localhost:8081",
-  ],
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-}));
+app.use(
+  cors({
+    origin: [
+      "https://app.vitalgoal.com",
+      process.env.DEV_ORIGIN ?? "http://localhost:8081",
+    ],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  }),
+);
 ```
 
 ---
 
-## 7. Upload de Arquivos Sem Validação de Tamanho ou Tipo
+## 7. Upload de Arquivos Sem Validação de Tamanho ou Tipo - FEITOOOO
 
 **OWASP A04 — Design Inseguro**
 
@@ -156,6 +159,7 @@ const multerUpload = multer({ storage: multer.memoryStorage() });
 ```
 
 Não há limite de tamanho (`limits.fileSize`) nem validação de tipo MIME. Um atacante pode:
+
 - Fazer upload de um arquivo de vários gigabytes para esgotar a memória do servidor (negação de serviço);
 - Enviar arquivos com tipos MIME arbitrários, potencialmente armazenando conteúdo executável;
 - Usar um `originalname` com caracteres de path traversal na chave do blob.
@@ -180,13 +184,16 @@ const multerUpload = multer({
 
 // Sanitizar o nome do arquivo antes de usá-lo na chave do blob
 import { basename } from "path";
-const nomeSeguro = basename(req.file.originalname).replace(/[^a-zA-Z0-9._-]/g, "_");
+const nomeSeguro = basename(req.file.originalname).replace(
+  /[^a-zA-Z0-9._-]/g,
+  "_",
+);
 const blobName = `consultas/${consultaId}/${Date.now()}-${nomeSeguro}`;
 ```
 
 ---
 
-## 8. Ausência de Validação de Entrada nas Rotas de Anamnese
+## 8. Ausência de Validação de Entrada nas Rotas de Anamnese - FEITOOOO
 
 **OWASP A03 — Injeção**
 
@@ -212,14 +219,16 @@ router.put("/:id", validate(anamneseSchema), async (req, res) => { ... });
 
 ---
 
-## 9. Token JWT de Longa Duração Sem Mecanismo de Revogação
+## 9. Token JWT de Longa Duração Sem Mecanismo de Revogação - FEITOOOO
 
 **OWASP A07 — Falhas de Identificação e Autenticação**
 
 **Localização:** `backend/src/routes/auth.ts:52` e `backend/src/routes/auth.ts:85`
 
 ```ts
-{ expiresIn: "7d" }
+{
+  expiresIn: "7d";
+}
 ```
 
 Os tokens são válidos por 7 dias sem nenhum mecanismo de invalidação no servidor. Se um token for roubado (por exemplo, via `AsyncStorage` em um dispositivo comprometido), o atacante mantém acesso completo até o vencimento natural. Não existe endpoint de logout que invalide o token no servidor.
@@ -230,14 +239,14 @@ Os tokens são válidos por 7 dias sem nenhum mecanismo de invalidação no serv
 
 ## Resumo
 
-| # | Vulnerabilidade | Categoria OWASP | Severidade |
-|---|-----------------|-----------------|------------|
-| 1 | Segredo JWT fixo no código como valor padrão | A02 Falhas Criptográficas | Crítica |
-| 2 | Sem rate limiting nos endpoints de autenticação | A07 Falhas de Autenticação | Alta |
-| 3 | Token JWT armazenado no AsyncStorage | Mobile M9 Armazenamento Inseguro | Alta |
-| 4 | API via HTTP sem TLS | A02 Falhas Criptográficas | Alta |
-| 5 | Requisitos de senha fracos | A07 Falhas de Autenticação | Média |
-| 6 | CORS permite qualquer origem | A05 Configuração Incorreta | Média |
-| 7 | Upload de arquivos sem validação | A04 Design Inseguro | Média |
-| 8 | Sem validação de entrada nas anamneses | A03 Injeção | Média |
-| 9 | Token JWT de longa duração sem revogação | A07 Falhas de Autenticação | Média |
+| #   | Vulnerabilidade                                 | Categoria OWASP                  | Severidade |
+| --- | ----------------------------------------------- | -------------------------------- | ---------- |
+| 1   | Segredo JWT fixo no código como valor padrão    | A02 Falhas Criptográficas        | Crítica    |
+| 2   | Sem rate limiting nos endpoints de autenticação | A07 Falhas de Autenticação       | Alta       |
+| 3   | Token JWT armazenado no AsyncStorage            | Mobile M9 Armazenamento Inseguro | Alta       |
+| 4   | API via HTTP sem TLS                            | A02 Falhas Criptográficas        | Alta       |
+| 5   | Requisitos de senha fracos                      | A07 Falhas de Autenticação       | Média      |
+| 6   | CORS permite qualquer origem                    | A05 Configuração Incorreta       | Média      |
+| 7   | Upload de arquivos sem validação                | A04 Design Inseguro              | Média      |
+| 8   | Sem validação de entrada nas anamneses          | A03 Injeção                      | Média      |
+| 9   | Token JWT de longa duração sem revogação        | A07 Falhas de Autenticação       | Média      |

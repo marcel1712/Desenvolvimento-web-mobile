@@ -1,10 +1,13 @@
-import { Router } from "express";
-import type { Response } from "express";
 import { eq, inArray } from "drizzle-orm";
+import type { Response } from "express";
+import { Router } from "express";
 import { db } from "../db";
 import { anamneses, consultas, usuarios } from "../db/schema";
-import { authenticate } from "../middlewares/auth";
 import type { AuthRequest } from "../middlewares/auth";
+import { authenticate } from "../middlewares/auth";
+import { validate } from "../middlewares/validate";
+import type { AnamneseBody } from "../schemas/anamnese.schema";
+import { anamneseSchema } from "../schemas/anamnese.schema";
 
 const router = Router();
 
@@ -34,7 +37,9 @@ router.get("/", async (req: AuthRequest, res: Response) => {
     return;
   }
 
-  const pacienteIds = pacientesRows.map((r) => r.pacienteId).filter(Boolean) as number[];
+  const pacienteIds = pacientesRows
+    .map((r) => r.pacienteId)
+    .filter(Boolean) as number[];
 
   const lista = await db
     .select({
@@ -62,113 +67,105 @@ router.get("/", async (req: AuthRequest, res: Response) => {
   res.json(lista);
 });
 
-router.post("/", async (req: AuthRequest, res: Response) => {
-  const { id, tipo } = req.user!;
+router.post(
+  "/",
+  validate(anamneseSchema), // <-- SEGURANÇA: Bloqueia dados inválidos ou injeções aqui
+  async (req: AuthRequest, res: Response) => {
+    const { id, tipo } = req.user!;
 
-  if (tipo !== "paciente") {
-    res.status(403).json({ message: "Apenas pacientes podem criar anamneses" });
-    return;
-  }
+    if (tipo !== "paciente") {
+      res
+        .status(403)
+        .json({ message: "Apenas pacientes podem criar anamneses" });
+      return;
+    }
 
-  const [existing] = await db
-    .select({ id: anamneses.id })
-    .from(anamneses)
-    .where(eq(anamneses.pacienteId, id));
+    const [existing] = await db
+      .select({ id: anamneses.id })
+      .from(anamneses)
+      .where(eq(anamneses.pacienteId, id));
 
-  if (existing) {
-    res.status(409).json({ message: "Anamnese já existe. Use PUT para atualizar." });
-    return;
-  }
+    if (existing) {
+      res
+        .status(409)
+        .json({ message: "Anamnese já existe. Use PUT para atualizar." });
+      return;
+    }
 
-  const {
-    idade,
-    peso,
-    altura,
-    bmi,
-    condicoesSaude,
-    alergias,
-    horasSono,
-    nivelAtividade,
-    tipoAlimentacao,
-    habitos,
-    objetivo,
-  } = req.body;
+    // Usando o corpo da requisição já validado e higienizado pelo Zod
+    const body = req.body as AnamneseBody;
 
-  const [created] = await db
-    .insert(anamneses)
-    .values({
-      pacienteId: id,
-      idade: idade != null ? Number(idade) : null,
-      peso: peso || null,
-      altura: altura || null,
-      bmi: bmi || null,
-      condicoesSaude: condicoesSaude ?? null,
-      alergias: alergias || null,
-      horasSono: horasSono || null,
-      nivelAtividade: nivelAtividade ?? null,
-      tipoAlimentacao: tipoAlimentacao ?? null,
-      habitos: habitos ?? null,
-      objetivo: objetivo || null,
-    })
-    .returning();
+    const [created] = await db
+      .insert(anamneses)
+      .values({
+        pacienteId: id,
+        idade: body.idade ?? null,
+        peso: body.peso ?? null,
+        altura: body.altura ?? null,
+        bmi: body.bmi ?? null,
+        condicoesSaude: body.condicoesSaude ?? null,
+        alergias: body.alergias ?? null,
+        horasSono: body.horasSono ?? null,
+        nivelAtividade: (body.nivelAtividade as any) ?? null, // Cast seguro para bater com o enum do banco
+        tipoAlimentacao: body.tipoAlimentacao ?? null,
+        habitos: body.habitos ?? null,
+        objetivo: body.objetivo ?? null,
+      })
+      .returning();
 
-  res.status(201).json(created);
-});
+    res.status(201).json(created);
+  },
+);
 
-router.put("/:id", async (req: AuthRequest, res: Response) => {
-  const { id: userId, tipo } = req.user!;
+router.put(
+  "/:id",
+  validate(anamneseSchema), // <-- SEGURANÇA: Validação também na atualização
+  async (req: AuthRequest, res: Response) => {
+    const { id: userId, tipo } = req.user!;
 
-  if (tipo !== "paciente") {
-    res.status(403).json({ message: "Apenas pacientes podem atualizar anamneses" });
-    return;
-  }
+    if (tipo !== "paciente") {
+      res
+        .status(403)
+        .json({ message: "Apenas pacientes podem atualizar anamneses" });
+      return;
+    }
 
-  const anamneseId = Number(req.params.id);
+    const anamneseId = Number(req.params.id);
 
-  const [existing] = await db
-    .select({ id: anamneses.id, pacienteId: anamneses.pacienteId })
-    .from(anamneses)
-    .where(eq(anamneses.id, anamneseId));
+    const [existing] = await db
+      .select({ id: anamneses.id, pacienteId: anamneses.pacienteId })
+      .from(anamneses)
+      .where(eq(anamneses.id, anamneseId));
 
-  if (!existing || existing.pacienteId !== userId) {
-    res.status(404).json({ message: "Anamnese não encontrada" });
-    return;
-  }
+    if (!existing || existing.pacienteId !== userId) {
+      res.status(404).json({ message: "Anamnese não encontrada" });
+      return;
+    }
 
-  const {
-    idade,
-    peso,
-    altura,
-    bmi,
-    condicoesSaude,
-    alergias,
-    horasSono,
-    nivelAtividade,
-    tipoAlimentacao,
-    habitos,
-    objetivo,
-  } = req.body;
+    // Usando o corpo da requisição já validado e higienizado pelo Zod
+    const body = req.body as AnamneseBody;
 
-  const [updated] = await db
-    .update(anamneses)
-    .set({
-      idade: idade != null ? Number(idade) : null,
-      peso: peso || null,
-      altura: altura || null,
-      bmi: bmi || null,
-      condicoesSaude: condicoesSaude ?? null,
-      alergias: alergias || null,
-      horasSono: horasSono || null,
-      nivelAtividade: nivelAtividade ?? null,
-      tipoAlimentacao: tipoAlimentacao ?? null,
-      habitos: habitos ?? null,
-      objetivo: objetivo || null,
-      atualizadoEm: new Date(),
-    })
-    .where(eq(anamneses.id, anamneseId))
-    .returning();
+    const [updated] = await db
+      .update(anamneses)
+      .set({
+        idade: body.idade ?? null,
+        peso: body.peso ?? null,
+        altura: body.altura ?? null,
+        bmi: body.bmi ?? null,
+        condicoesSaude: body.condicoesSaude ?? null,
+        alergias: body.alergias ?? null,
+        horasSono: body.horasSono ?? null,
+        nivelAtividade: (body.nivelAtividade as any) ?? null,
+        tipoAlimentacao: body.tipoAlimentacao ?? null,
+        habitos: body.habitos ?? null,
+        objetivo: body.objetivo ?? null,
+        atualizadoEm: new Date(),
+      })
+      .where(eq(anamneses.id, anamneseId))
+      .returning();
 
-  res.json(updated);
-});
+    res.json(updated);
+  },
+);
 
 export default router;

@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
 import { createContext, useEffect, useState } from "react";
 
 export type Usuario = {
@@ -16,7 +16,9 @@ type AuthContextType = {
   logout: () => Promise<void>;
 };
 
-export const AuthContext = createContext<AuthContextType>({} as AuthContextType);
+export const AuthContext = createContext<AuthContextType>(
+  {} as AuthContextType,
+);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
@@ -25,8 +27,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     async function loadStoredAuth() {
-      const storedToken = await AsyncStorage.getItem("@vitalgoal:token");
-      const storedUser = await AsyncStorage.getItem("@vitalgoal:usuario");
+      // Lendo os dados de forma segura do hardware do dispositivo
+      const storedToken = await SecureStore.getItemAsync("@vitalgoal:token");
+      const storedUser = await SecureStore.getItemAsync("@vitalgoal:usuario");
+
       if (storedToken && storedUser) {
         setToken(storedToken);
         setUsuario(JSON.parse(storedUser));
@@ -37,15 +41,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   async function login(newToken: string, newUsuario: Usuario) {
-    await AsyncStorage.setItem("@vitalgoal:token", newToken);
-    await AsyncStorage.setItem("@vitalgoal:usuario", JSON.stringify(newUsuario));
+    // Salvando os dados de forma segura criptografada
+    await SecureStore.setItemAsync("@vitalgoal:token", newToken);
+    await SecureStore.setItemAsync(
+      "@vitalgoal:usuario",
+      JSON.stringify(newUsuario),
+    );
+
     setToken(newToken);
     setUsuario(newUsuario);
   }
 
   async function logout() {
-    await AsyncStorage.removeItem("@vitalgoal:token");
-    await AsyncStorage.removeItem("@vitalgoal:usuario");
+    // Apagando os dados do cofre seguro
+    await SecureStore.deleteItemAsync("@vitalgoal:token");
+    await SecureStore.deleteItemAsync("@vitalgoal:usuario");
+
     setToken(null);
     setUsuario(null);
   }
