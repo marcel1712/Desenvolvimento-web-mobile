@@ -13,23 +13,20 @@ import pagamentosRouter from "./routes/pagamentos";
 import protocolosRouter from "./routes/protocolos";
 import usersRouter from "./routes/users";
 
-const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(",")
-  : ["http://localhost:8081"];
+const testing = true;
 
 const app = express();
 
 app.use(express.json());
 
-// =================================================================
-// SEGURANÇA: Configuração rigorosa de CORS
-// =================================================================
 app.use(
   cors({
-    origin: [
-      "https://app.vitalgoal.com",
-      process.env.DEV_ORIGIN ?? "http://localhost:8081",
-    ],
+    origin: testing
+      ? true
+      : [
+          "https://app.vitalgoal.com",
+          process.env.DEV_ORIGIN ?? "http://localhost:8081",
+        ],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
