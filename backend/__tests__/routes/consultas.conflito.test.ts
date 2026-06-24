@@ -58,7 +58,7 @@ describe("POST /api/consultas — conflict guard", () => {
       }),
     });
 
-    mockTransaction.mockImplementation(async (fn: Function) => {
+    mockTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
       const tx = {
         select: jest.fn().mockReturnValue({
           from: jest.fn().mockReturnValue({
@@ -86,7 +86,7 @@ describe("POST /api/consultas — conflict guard", () => {
       }),
     });
 
-    mockTransaction.mockImplementation(async (fn: Function) => {
+    mockTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
       const txSelect = jest.fn()
         .mockReturnValueOnce({
           from: jest.fn().mockReturnValue({
@@ -131,7 +131,7 @@ describe("POST /api/consultas — conflict guard", () => {
       criadoEm: new Date(),
     };
 
-    mockTransaction.mockImplementation(async (fn: Function) => {
+    mockTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
       const txSelect = jest.fn()
         .mockReturnValueOnce({
           from: jest.fn().mockReturnValue({
