@@ -53,6 +53,7 @@ jobs:
             "${{ github.event.pull_request.base.sha }}" \
             "${{ github.event.pull_request.head.sha }}" \
             | grep '^backend/src/' \
+            | grep -v '__tests__' \
             | grep -v '\.d\.ts$' \
             | sed 's|^backend/||' || true)
           if [ -n "$FILES" ]; then
