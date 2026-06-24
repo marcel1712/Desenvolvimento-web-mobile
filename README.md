@@ -7,6 +7,8 @@
 ![backend coverage](https://img.shields.io/badge/backend%20coverage-91%25-brightgreen)
 <!-- COVERAGE-BADGES:END -->
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=DaviMoreira27_desenvolvimento-web-mobile&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=DaviMoreira27_desenvolvimento-web-mobile)
+
 Aplicação fullstack de gerenciamento de consultas, protocolos e pagamentos para pacientes e médicos.
 
 ## 📋 Pré-requisitos
