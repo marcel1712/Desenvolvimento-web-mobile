@@ -1,6 +1,6 @@
 import { Router } from "express";
 import type { Response } from "express";
-import { eq, or } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "../db";
 import { protocolos, usuarios } from "../db/schema";

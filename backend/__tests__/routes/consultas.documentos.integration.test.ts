@@ -51,7 +51,7 @@ describe("Integration: POST /api/consultas/:id/documentos", () => {
   });
 
   it("inserts a DB row with blobName, uploaderId, and no url field on successful upload", async () => {
-    const insertedRow = {
+    const _insertedRow = {
       id: 10,
       consultaId: 1,
       nomeArquivo: "laudo.pdf",

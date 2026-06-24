@@ -1,5 +1,3 @@
-import type { AzureStorageService } from "../../src/services/azureStorage";
-
 const mockUploadData = jest.fn().mockResolvedValue({});
 const mockGenerateSasUrl = jest.fn().mockResolvedValue("https://account.blob.core.windows.net/container/blob?sas=token");
 const mockGetBlockBlobClient = jest.fn(() => ({
