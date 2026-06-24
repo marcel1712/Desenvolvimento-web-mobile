@@ -1,5 +1,7 @@
 # VitalGoal - Guia de Setup Completo
 
+[![PR Tests](https://github.com/LHuss31/Desenvolvimento-web-mobile/actions/workflows/pr-tests.yml/badge.svg)](https://github.com/LHuss31/Desenvolvimento-web-mobile/actions/workflows/pr-tests.yml)
+
 Aplicação fullstack de gerenciamento de consultas, protocolos e pagamentos para pacientes e médicos.
 
 ## 📋 Pré-requisitos
