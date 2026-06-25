@@ -29,7 +29,7 @@ jobs:
               - 'frontend/**'
 
   backend-tests:
-    name: Backend Tests
+    name: Backend Tests (run)
     needs: detect-changes
     if: needs.detect-changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
@@ -128,7 +128,7 @@ jobs:
           echo "All changed files meet the 80% coverage threshold."
 
   frontend-tests:
-    name: Frontend Tests + Selenium
+    name: Frontend Tests + Selenium (run)
     needs: detect-changes
     if: needs.detect-changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
@@ -248,3 +248,17 @@ jobs:
             --filter '^anamnese_' \
             -c "browserName=chrome goog:chromeOptions.args=[--headless,--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--window-size=1280,1000]" \
             frontend/web-mobile-project.side
+
+  ci-gate:
+    name: CI
+    needs: [backend-tests, frontend-tests]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: All tests passed or skipped
+        run: |
+          b="${{ needs.backend-tests.result }}"
+          f="${{ needs.frontend-tests.result }}"
+          [[ "$b" == "success" || "$b" == "skipped" ]] || { echo "backend failed: $b"; exit 1; }
+          [[ "$f" == "success" || "$f" == "skipped" ]] || { echo "frontend failed: $f"; exit 1; }
