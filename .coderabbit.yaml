@@ -1,0 +1,33 @@
+language: "pt-BR"
+
+reviews:
+  commit_message_guidelines:
+    title: |
+      Título deve seguir Conventional Commits, sempre em português.
+
+      Formato: <tipo>(<escopo opcional>): <descrição>
+
+      Tipos permitidos: feat, fix, docs, style, refactor, perf, test, build, ci, chore.
+
+      Regras:
+      - Descrição em português, no imperativo (ex: "adiciona", "corrige", "remove"), nunca no gerúndio ou passado.
+      - Descrição concisa, idealmente abaixo de 50 caracteres, sem ponto final.
+      - Escopo entre parênteses quando fizer sentido (nome do módulo/pasta afetado), minúsculo.
+      - Breaking change indicado com "!" antes dos dois pontos (ex: feat(auth)!: remove suporte a login legado), nunca em inglês no corpo.
+      - Rejeitar títulos genéricos como "ajustes", "correções", "update" sem contexto do que mudou.
+
+  instructions: |
+    Stack: TypeScript/Node no backend, React Native + Expo no client, Drizzle ORM sobre PostgreSQL.
+
+    Foque exclusivamente em segurança, ignore estilo e formatação. Para cada finding, classifique com CWE e severidade (critical/high/medium/low).
+
+    Verificar:
+
+    1. SQL injection via Drizzle: uso de sql.raw() ou template strings com interpolação direta em vez de bindings parametrizados.
+    2. Auth/Authz: validação de JWT (secret hardcoded, algoritmo none aceito, falta de checagem de expiração/issuer), IDOR (acesso a recurso sem checar ownership), middleware de auth ausente ou bypassável.
+    3. Exposição de dados: secrets hardcoded no código, uso indevido de variáveis EXPO_PUBLIC_* para dados sensíveis (essas vão pro bundle client e são extraíveis do APK/IPA), logs gravando senha/token/PII, mensagens de erro vazando stack trace ou schema do banco.
+    4. Mobile específico: tokens guardados em AsyncStorage sem encriptação em vez de expo-secure-store, deep links sem validação de origem antes de navegar/executar ação, WebView com bridge sem validação de onShouldStartLoadWithRequest, ausência de cert pinning em chamadas sensíveis.
+    5. SSRF em qualquer fetch/axios que use URL vinda de input do usuário.
+    6. Rate limiting ausente em rotas de login, reset de senha, OTP.
+    7. CORS com origin "*" em rota autenticada.
+    8. Dependências com CVE conhecido nas versões usadas do Expo SDK e pacotes npm.
