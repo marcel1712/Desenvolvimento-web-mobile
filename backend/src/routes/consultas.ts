@@ -54,7 +54,7 @@ const medicoAlias = alias(usuarios, "medico");
 
 router.get("/", async (req: AuthRequest, res: Response) => {
   const { id, tipo } = req.user!;
-
+  console.log("Hello");
   const filtro =
     tipo === "paciente"
       ? eq(consultas.pacienteId, id)
