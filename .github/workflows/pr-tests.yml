@@ -249,24 +249,16 @@ jobs:
             -c "browserName=chrome goog:chromeOptions.args=[--headless,--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--window-size=1280,1000]" \
             frontend/web-mobile-project.side
 
-  backend-gate:
-    name: Backend Tests
-    needs: [detect-changes, backend-tests]
+  ci-gate:
+    name: CI
+    needs: [backend-tests, frontend-tests]
     if: always()
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
-      - name: Pass when tests succeeded or were skipped
+      - name: All tests passed or skipped
         run: |
-          result="${{ needs.backend-tests.result }}"
-          [[ "$result" == "success" || "$result" == "skipped" ]] || exit 1
-
-  frontend-gate:
-    name: Frontend Tests + Selenium
-    needs: [detect-changes, frontend-tests]
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Pass when tests succeeded or were skipped
-        run: |
-          result="${{ needs.frontend-tests.result }}"
-          [[ "$result" == "success" || "$result" == "skipped" ]] || exit 1
+          b="${{ needs.backend-tests.result }}"
+          f="${{ needs.frontend-tests.result }}"
+          [[ "$b" == "success" || "$b" == "skipped" ]] || { echo "backend failed: $b"; exit 1; }
+          [[ "$f" == "success" || "$f" == "skipped" ]] || { echo "frontend failed: $f"; exit 1; }
